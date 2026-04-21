@@ -1,19 +1,21 @@
+using System.Collections.Generic;
 using UnityEngine;
-
 public class SudokuHintSystem : MonoBehaviour
 {
     SudokuTechniques solver;
-
     [SerializeField] SudokuBoardController boardController;
-
     public void Init(SudokuGameManager.Difficulty difficulty)
     {
         solver = new SudokuTechniques(difficulty);
     }
-    public bool TryGetHint(out int row, out int col, out int value, out string technique)
+    public bool TryGetHint(out SudokuHint hint)
     {
-        int[,] board = boardController.GetBoardMatrix();
+        var ctx = new SudokuContext
+        {
+            board = boardController.GetBoardMatrix(),
+            notesMask = boardController.boardData.notesMask
+        };
 
-        return solver.GetHint(board, out row, out col, out value, out technique);
+        return solver.GetHint(ctx, out hint);
     }
 }

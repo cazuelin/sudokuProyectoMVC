@@ -1,5 +1,3 @@
-using UnityEngine;
-
 public static class SudokuPattern 
 {
     public static int Pattern(int r, int c)

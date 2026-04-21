@@ -1,73 +1,67 @@
 ﻿using UnityEngine;
-
 public class SudokuGameFlowController : MonoBehaviour
 {
     SudokuGenerator generator = new SudokuGenerator();
-
     [SerializeField] SudokuBoardView boardView;
     [SerializeField] SudokuSaveManager saveManager;
     [SerializeField] SudokuBoardController boardController;
     [SerializeField] SudokuDifficultyUI difficultyUI;
     [SerializeField] SudokuMistakeSystem mistakeSystem;
-
+    [SerializeField] SudokuTimer timer;
     void Start()
     {
         mistakeSystem.OnGameOver += OnGameOver;
+        Initialize();
     }
-    public void Initialize(SudokuBoardView view)
+    public void Initialize()
     {
-        boardView = view;
-
-        bool loaded = false;
-
-        if (saveManager.HasContinueGame())
+        int slot = SudokuGameSession.SelectedSlot;
+        if (slot < 0)
         {
-            loaded = saveManager.LoadGame(0);
+            Debug.LogError("No hay slot seleccionado");
+            return;
         }
-
-        if (loaded)
+        if (SudokuGameSession.LoadFromSave)
         {
-
-            var data = boardController.GetBoardData();
-
-            boardView.UpdateBoard(
-                data.values,
-                data.fixedCells,
-                data.notesMask
-            );
+            bool loaded = saveManager.LoadGame(slot);
+            if (loaded)
+            {
+                LoadBoardToView();
+                timer.StartTimer(); 
+                return;
+            }
         }
-        else
-        {
-            GenerateGame();
-        }
+        GenerateGame();
+        saveManager.SaveGame(slot);
+        timer.ResetTime();
+        timer.StartTimer();
     }
-
+    void LoadBoardToView()
+    {
+        var data = boardController.GetBoardData();
+        boardView.UpdateBoard(
+            data.values,
+            data.fixedCells,
+            data.notesMask
+        );
+    }
     void GenerateGame()
     {
         var difficulty = SudokuGameManager.Instance.difficulty;
-
         SudokuTechniques solver = new SudokuTechniques(difficulty);
         SudokuDifficultyEvaluator evaluator = new SudokuDifficultyEvaluator();
-
         int removeAmount = GetRemoveAmount();
-
         int[,] solution = generator.GenerateSolution();
         int[,] puzzle = generator.CreatePuzzle(solution, removeAmount);
-
         int steps = CountSteps(puzzle, solver);
-
         var diff = evaluator.Evaluate(puzzle, steps);
-
         Debug.Log($"Real: {diff} | Selected: {difficulty} | Steps: {steps}");
-
         difficultyUI.SetDifficulty(SudokuGameManager.Instance.difficulty);
-
         var data = generator.ConvertToBoardData(solution, puzzle);
-
         boardController.SetBoardData(data);
+        boardController.SetInitialState(data);
         boardView.UpdateBoard(data.values, data.fixedCells, data.notesMask);
     }
-
     int GetRemoveAmount()
     {
         return SudokuGameManager.Instance.difficulty switch
@@ -76,20 +70,34 @@ public class SudokuGameFlowController : MonoBehaviour
             SudokuGameManager.Difficulty.Medium => Random.Range(36, 42),
             SudokuGameManager.Difficulty.Hard => Random.Range(42, 50),
             SudokuGameManager.Difficulty.Expert => Random.Range(50, 56),
-            SudokuGameManager.Difficulty.Master => Random.Range(56, 60),
-            SudokuGameManager.Difficulty.Extreme => Random.Range(60, 64),
             _ => 40
         };
     }
     int CountSteps(int[,] puzzle, SudokuTechniques solver)
     {
         int[,] board = (int[,])puzzle.Clone();
+        int[] notes = new int[81];
+
+        SudokuContext ctx = new SudokuContext
+        {
+            board = board,
+            notesMask = notes
+        };
 
         int steps = 0;
 
-        while (solver.GetHint(board, out int r, out int c, out int v, out _))
+        while (solver.GetHint(ctx, out var hint))
         {
-            board[r, c] = v;
+            foreach (var a in hint.actions)
+            {
+                if (a.type == SudokuActionType.Place)
+                {
+                    int r = a.index / 9;
+                    int c = a.index % 9;
+                    board[r, c] = a.value;
+                }
+            }
+
             steps++;
         }
 
@@ -98,24 +106,5 @@ public class SudokuGameFlowController : MonoBehaviour
     void OnGameOver()
     {
         Debug.Log("Mostrar pantalla de derrota");
-
-        // bloquear input
-        // mostrar popup
-        // botón retry / continuar con ad
     }
-    public void LoadFromSave()
-    {
-        var data = boardController.GetBoardData();
-
-        boardView.UpdateBoard(
-            data.values,
-            data.fixedCells,
-            data.notesMask
-        );
-    }
-    public void GenerateNewGame()
-    {
-        GenerateGame();
-    }
-
 }

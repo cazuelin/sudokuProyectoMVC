@@ -1,45 +1,36 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-
 public class SudokuSaveSlotUI : MonoBehaviour
 {
     [SerializeField] TextMeshProUGUI slotLabel;
     [SerializeField] Button button;
-
     int slotIndex;
     SudokuSaveManager saveManager;
-    SudokuGameFlowController flow;
-
-    public void Init(int index, SudokuSaveManager manager, SudokuGameFlowController flowController)
+    public void Init(int index, SudokuSaveManager manager)
     {
         slotIndex = index;
         saveManager = manager;
-        flow = flowController;
-
         slotLabel.text = $"Slot {index + 1}";
-
         button.onClick.RemoveAllListeners();
         button.onClick.AddListener(OnClick);
-
         Refresh();
     }
-
     void OnClick()
     {
         Debug.Log($"Cargando slot {slotIndex}");
-
-        if (saveManager.LoadGame(slotIndex))
+        SudokuGameSession.SelectedSlot = slotIndex;
+        if (saveManager.HasSlot(slotIndex))
         {
-            flow.Initialize(flow.GetComponent<SudokuBoardView>());
+            SudokuGameSession.LoadFromSave = true;
         }
         else
         {
-            Debug.Log("Slot vacío → generar nuevo");
-            flow.Initialize(flow.GetComponent<SudokuBoardView>());
+            SudokuGameSession.LoadFromSave = false;
+            SudokuGameSession.SelectedDifficulty = SudokuGameManager.Difficulty.Medium;
         }
+        UnityEngine.SceneManagement.SceneManager.LoadScene("Game");
     }
-
     public void Refresh()
     {
         if (saveManager.HasSlot(slotIndex))

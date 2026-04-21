@@ -2,61 +2,62 @@ using System.Collections.Generic;
 
 public class NakedSingleTechnique : ISudokuTechnique
 {
-    public bool TryApply(int[,] board, out int row, out int col, out int value)
+    public string Name => "Naked Single";
+    public int DifficultyScore => 1;
+
+    public bool TryApply(SudokuContext ctx, out SudokuHint hint)
     {
-        for (row = 0; row < 9; row++)
+        for (int r = 0; r < 9; r++)
         {
-            for (col = 0; col < 9; col++)
+            for (int c = 0; c < 9; c++)
             {
-                if (board[row, col] != 0) continue;
+                if (ctx.board[r, c] != 0) continue;
 
-                var candidates = GetCandidates(board, row, col);
+                int index = r * 9 + c;
+                int mask = ctx.notesMask[index];
 
-                if (candidates.Count == 1)
+                if (CountBits(mask) == 1)
                 {
-                    value = candidates[0];
+                    int value = GetSingle(mask);
+
+                    hint = new SudokuHint
+                    {
+                        technique = Name,
+                        candidateMask = mask
+                    };
+
+                    hint.highlightCells.Add(index);
+
+                    hint.actions.Add(new SudokuAction
+                    {
+                        type = SudokuActionType.Place,
+                        index = index,
+                        value = value,
+                        technique = Name
+                    });
+
                     return true;
                 }
             }
         }
 
-        row = col = value = -1;
+        hint = null;
         return false;
     }
 
-    List<int> GetCandidates(int[,] board, int row, int col)
+    int CountBits(int m)
     {
-        List<int> list = new List<int>();
-
-        for (int num = 1; num <= 9; num++)
-        {
-            if (IsValid(board, row, col, num))
-                list.Add(num);
-        }
-
-        return list;
+        int count = 0;
+        while (m != 0) { m &= (m - 1); count++; }
+        return count;
     }
 
-    bool IsValid(int[,] board, int row, int col, int num)
+    int GetSingle(int mask)
     {
         for (int i = 0; i < 9; i++)
-        {
-            if (board[row, i] == num) return false;
-            if (board[i, col] == num) return false;
-        }
+            if ((mask & (1 << i)) != 0)
+                return i + 1;
 
-        int startRow = (row / 3) * 3;
-        int startCol = (col / 3) * 3;
-
-        for (int r = 0; r < 3; r++)
-            for (int c = 0; c < 3; c++)
-                if (board[startRow + r, startCol + c] == num)
-                    return false;
-
-        return true;
-    }
-    public string GetName()
-    {
-        return "Único posible";
+        return -1;
     }
 }
