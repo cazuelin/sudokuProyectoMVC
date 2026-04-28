@@ -77,15 +77,12 @@ public class SudokuGameFlowController : MonoBehaviour
     {
         int[,] board = (int[,])puzzle.Clone();
         int[] notes = new int[81];
-
         SudokuContext ctx = new SudokuContext
         {
             board = board,
             notesMask = notes
         };
-
         int steps = 0;
-
         while (solver.GetHint(ctx, out var hint))
         {
             foreach (var a in hint.actions)
@@ -97,10 +94,8 @@ public class SudokuGameFlowController : MonoBehaviour
                     board[r, c] = a.value;
                 }
             }
-
             steps++;
         }
-
         return steps;
     }
     void OnGameOver()

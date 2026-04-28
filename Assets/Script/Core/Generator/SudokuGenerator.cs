@@ -65,7 +65,7 @@ public class SudokuGenerator
         for (int i = 0; i < SIZE; i++)
         {
             int rand = Random.Range(i, SIZE);
-            (map[i], map[rand]) = (map[rand], map[i]); // swap moderno
+            (map[i], map[rand]) = (map[rand], map[i]);
         }
         for (int r = 0; r < SIZE; r++)
             for (int c = 0; c < SIZE; c++)

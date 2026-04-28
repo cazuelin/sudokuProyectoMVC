@@ -22,7 +22,6 @@ public class SudokuSaveManager : MonoBehaviour
         {
             board = board.boardData,
             initialBoard = board.GetInitialData(),
-
             time = timer.GetTime(),
             difficulty = (int)SudokuGameManager.Instance.difficulty,
             undoStack = board.GetUndoStack() ?? new List<SudokuMove>(),

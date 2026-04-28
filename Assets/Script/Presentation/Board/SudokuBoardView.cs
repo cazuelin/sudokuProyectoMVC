@@ -32,5 +32,4 @@ public class SudokuBoardView : MonoBehaviour
         }
     }
     public SudokuCell[,] GetCells() => cells;
-
 }

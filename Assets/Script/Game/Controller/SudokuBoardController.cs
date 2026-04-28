@@ -231,7 +231,6 @@ public class SudokuBoardController : MonoBehaviour
     void InitBitMask()
     {
         bitMask.Clear();
-
         for (int i = 0; i < 81; i++)
         {
             int val = boardData.values[i];
@@ -256,7 +255,6 @@ public class SudokuBoardController : MonoBehaviour
                 boardData.notesMask[action.index] &= ~action.mask;
             }
         }
-
         NotifyBoardChanged();
     }
 }

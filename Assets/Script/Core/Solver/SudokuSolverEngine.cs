@@ -1,9 +1,7 @@
 using System.Collections.Generic;
-
 public class SudokuSolverEngine
 {
     List<ISudokuTechnique> techniques;
-
     public SudokuSolverEngine(SudokuGameManager.Difficulty diff)
     {
         techniques = new List<ISudokuTechnique>
@@ -11,7 +9,6 @@ public class SudokuSolverEngine
             new NakedSingleTechnique(),
             new HiddenSingleTechnique()
         };
-
         if (diff >= SudokuGameManager.Difficulty.Medium)
             techniques.Add(new PointingPairTechnique());
 
@@ -21,7 +18,6 @@ public class SudokuSolverEngine
         if (diff >= SudokuGameManager.Difficulty.Expert)
             techniques.Add(new XWingTechnique());
     }
-
     public bool Step(SudokuContext ctx, out SudokuHint hint)
     {
         foreach (var tech in techniques)
@@ -29,7 +25,6 @@ public class SudokuSolverEngine
             if (tech.TryApply(ctx, out hint))
                 return true;
         }
-
         hint = null;
         return false;
     }
