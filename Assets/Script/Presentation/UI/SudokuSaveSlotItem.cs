@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System;
+
 public class SudokuSaveSlotItem : MonoBehaviour
 {
     [Header("UI")]
@@ -15,12 +17,15 @@ public class SudokuSaveSlotItem : MonoBehaviour
     [SerializeField] Button mediumBtn;
     [SerializeField] Button hardBtn;
     [SerializeField] Button expertBtn;
+    [SerializeField] Button extremeBtn;
     int slotIndex;
-    SudokuSaveManager saveManager;
-    public void Init(int index, SudokuSaveManager manager)
+    public event Action<int> OnContinueRequested;
+    public event Action<int> OnDeleteRequested;
+    public event Action<int, SudokuGameManager.Difficulty> OnCreateRequested;
+
+    public void Init(int index)
     {
         slotIndex = index;
-        saveManager = manager;
         createButton.onClick.RemoveAllListeners();
         continueButton.onClick.RemoveAllListeners();
         deleteButton.onClick.RemoveAllListeners();
@@ -31,26 +36,29 @@ public class SudokuSaveSlotItem : MonoBehaviour
         mediumBtn.onClick.RemoveAllListeners();
         hardBtn.onClick.RemoveAllListeners();
         expertBtn.onClick.RemoveAllListeners();
+        if (extremeBtn != null)
+            extremeBtn.onClick.RemoveAllListeners();
         easyBtn.onClick.AddListener(() => SelectDifficulty(SudokuGameManager.Difficulty.Easy));
         mediumBtn.onClick.AddListener(() => SelectDifficulty(SudokuGameManager.Difficulty.Medium));
         hardBtn.onClick.AddListener(() => SelectDifficulty(SudokuGameManager.Difficulty.Hard));
         expertBtn.onClick.AddListener(() => SelectDifficulty(SudokuGameManager.Difficulty.Expert));
+        if (extremeBtn != null)
+            extremeBtn.onClick.AddListener(() => SelectDifficulty(SudokuGameManager.Difficulty.Extreme));
         difficultyPanel.SetActive(false);
-        Refresh();
-    }
-    public void Refresh()
-    {
-        var data = saveManager.GetSlotData(slotIndex);
         title.text = $"Slot {slotIndex + 1}";
-        if (data == null)
-        {
-            info.text = "Nuevo juego";
-            createButton.gameObject.SetActive(true);
-            continueButton.gameObject.SetActive(false);
-            deleteButton.gameObject.SetActive(false);
-            return;
-        }
-        info.text = $"{((SudokuGameManager.Difficulty)data.difficulty)} • {FormatTime(data.time)}";
+    }
+
+    public void RenderEmpty()
+    {
+        info.text = "Nuevo juego";
+        createButton.gameObject.SetActive(true);
+        continueButton.gameObject.SetActive(false);
+        deleteButton.gameObject.SetActive(false);
+    }
+
+    public void RenderSaved(SudokuGameManager.Difficulty difficulty, float time)
+    {
+        info.text = $"{difficulty} • {FormatTime(time)}";
         createButton.gameObject.SetActive(false);
         continueButton.gameObject.SetActive(true);
         deleteButton.gameObject.SetActive(true);
@@ -63,14 +71,11 @@ public class SudokuSaveSlotItem : MonoBehaviour
     }
 void OnContinue()
 {
-    SudokuGameSession.SelectedSlot = slotIndex;
-    SudokuGameSession.LoadFromSave = true;
-    UnityEngine.SceneManagement.SceneManager.LoadScene("Game");
+    OnContinueRequested?.Invoke(slotIndex);
 }
     void OnDelete()
     {
-        saveManager.DeleteSlot(slotIndex);
-        Refresh();
+        OnDeleteRequested?.Invoke(slotIndex);
     }
     void OpenDifficultyPanel()
     {
@@ -78,11 +83,8 @@ void OnContinue()
     }
     void SelectDifficulty(SudokuGameManager.Difficulty difficulty)
     {
-        SudokuGameSession.SelectedSlot = slotIndex;
-        SudokuGameSession.LoadFromSave = false;
-        SudokuGameSession.SelectedDifficulty = difficulty;
         difficultyPanel.SetActive(false);
-        UnityEngine.SceneManagement.SceneManager.LoadScene("Game");
+        OnCreateRequested?.Invoke(slotIndex, difficulty);
     }
     public void CloseDifficultyPanel()
     {

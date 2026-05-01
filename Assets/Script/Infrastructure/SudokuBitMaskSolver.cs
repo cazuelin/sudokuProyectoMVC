@@ -5,6 +5,13 @@ public class SudokuBitMaskSolver
     int[] boxes = new int[9];
     public void Init(int[,] board)
     {
+        for (int i = 0; i < 9; i++)
+        {
+            rows[i] = 0;
+            cols[i] = 0;
+            boxes[i] = 0;
+        }
+
         for (int r = 0; r < 9; r++)
             for (int c = 0; c < 9; c++)
             {
@@ -31,7 +38,7 @@ public class SudokuBitMaskSolver
     }
     public void Remove(int row, int col, int num)
     {
-        int mask = ~(1 << num);
+        int mask = ~(1 << (num - 1));
         int box = (row / 3) * 3 + col / 3;
         rows[row] &= mask;
         cols[col] &= mask;

@@ -21,7 +21,7 @@ public class PointingPairTechnique : ISudokuTechnique
                         int rr = startRow + r;
                         int cc = startCol + c;
                         int index = rr * 9 + cc;
-                        if ((notesMask[index] & mask) != 0)
+                        if (ctx.board[rr, cc] == 0 && (notesMask[index] & mask) != 0)
                             positions.Add(index);
                     }
                 }
@@ -33,15 +33,19 @@ public class PointingPairTechnique : ISudokuTechnique
                         sameRow = false;
                 if (sameRow)
                 {
+                    List<int> affected = new();
                     for (int c = 0; c < 9; c++)
                     {
                         int index = baseRow * 9 + c;
                         if (IsInsideBox(index, box)) continue;
-                        if ((notesMask[index] & mask) != 0)
-                        {
-                            hint = BuildHint(Name, mask, positions, index);
-                            return true;
-                        }
+                        if (ctx.board[baseRow, c] == 0 && (notesMask[index] & mask) != 0)
+                            affected.Add(index);
+                    }
+
+                    if (affected.Count > 0)
+                    {
+                        hint = BuildHint(Name, mask, positions, affected);
+                        return true;
                     }
                 }
                 int baseCol = positions[0] % 9;
@@ -51,15 +55,19 @@ public class PointingPairTechnique : ISudokuTechnique
                         sameCol = false;
                 if (sameCol)
                 {
+                    List<int> affected = new();
                     for (int r = 0; r < 9; r++)
                     {
                         int index = r * 9 + baseCol;
                         if (IsInsideBox(index, box)) continue;
-                        if ((notesMask[index] & mask) != 0)
-                        {
-                            hint = BuildHint(Name, mask, positions, index);
-                            return true;
-                        }
+                        if (ctx.board[r, baseCol] == 0 && (notesMask[index] & mask) != 0)
+                            affected.Add(index);
+                    }
+
+                    if (affected.Count > 0)
+                    {
+                        hint = BuildHint(Name, mask, positions, affected);
+                        return true;
                     }
                 }
             }
@@ -67,7 +75,7 @@ public class PointingPairTechnique : ISudokuTechnique
         hint = null;
         return false;
     }
-    SudokuHint BuildHint(string tech, int mask, List<int> highlights, int affected)
+    SudokuHint BuildHint(string tech, int mask, List<int> highlights, List<int> affected)
     {
         var hint = new SudokuHint
         {
@@ -75,14 +83,17 @@ public class PointingPairTechnique : ISudokuTechnique
             candidateMask = mask
         };
         hint.highlightCells.AddRange(highlights);
-        hint.affectedCells.Add(affected);
-        hint.actions.Add(new SudokuAction
+        foreach (int idx in affected)
         {
-            type = SudokuActionType.RemoveNotes,
-            index = affected,
-            mask = mask,
-            technique = tech
-        });
+            hint.affectedCells.Add(idx);
+            hint.actions.Add(new SudokuAction
+            {
+                type = SudokuActionType.RemoveNotes,
+                index = idx,
+                mask = mask,
+                technique = tech
+            });
+        }
         return hint;
     }
     bool IsInsideBox(int index, int box)

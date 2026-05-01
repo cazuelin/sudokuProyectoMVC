@@ -3,7 +3,7 @@ using UnityEngine;
 public class SudokuBoardController : MonoBehaviour
 {
     public SudokuBoardData boardData { get; private set; }
-    SudokuBitMask bitMask;
+    SudokuBitMask bitMask = new SudokuBitMask();
     Stack<SudokuMove> undoStack = new Stack<SudokuMove>();
     Stack<SudokuMove> redoStack = new Stack<SudokuMove>();
     public List<SudokuMove> GetUndoStack() => new List<SudokuMove>(undoStack);
@@ -19,7 +19,6 @@ public class SudokuBoardController : MonoBehaviour
             ? new Stack<SudokuMove>(redo)
             : new Stack<SudokuMove>();
     }
-    [SerializeField] SudokuSaveManager saveManager;
     SudokuBoardData initialData;
     public int Get(int r, int c)
     {
@@ -37,7 +36,6 @@ public class SudokuBoardController : MonoBehaviour
         if (value != 0)
             boardData.notesMask[index] = 0;
         NotifyBoardChanged();
-        saveManager.AutoSave();
     }
     public event System.Action OnBoardChanged;
     public void PlaceNumber(int index, int number)
@@ -56,7 +54,6 @@ public class SudokuBoardController : MonoBehaviour
             boardData.notesMask[index] = 0;
         }
         NotifyBoardChanged();
-        saveManager.AutoSave();
     }
     public bool CanPlaceNumber(int r, int c, int number)
     {
@@ -86,11 +83,10 @@ public class SudokuBoardController : MonoBehaviour
     }
     public void SetBoardData(SudokuBoardData data)
     {
-        boardData = new SudokuBoardData();
-        boardData.values = (int[])data.values.Clone();
-        boardData.solution = (int[])data.solution.Clone();
-        boardData.fixedCells = (bool[])data.fixedCells.Clone();
-        boardData.notesMask = (int[])data.notesMask.Clone();
+        if (data == null)
+            return;
+
+        boardData = data.Clone();
         InitBitMask();
     }
     public int[,] GetBoardMatrix()
@@ -110,7 +106,6 @@ public class SudokuBoardController : MonoBehaviour
         if (boardData.fixedCells[index]) return;
         NotesUtil.Toggle(ref boardData.notesMask[index], number);
         NotifyBoardChanged();
-        saveManager.AutoSave();
     }
     public void AutoFillNotes()
     {
@@ -132,7 +127,6 @@ public class SudokuBoardController : MonoBehaviour
             }
         }
         NotifyBoardChanged();
-        saveManager.AutoSave();
     }
     void RemoveNotesFromPeers(int row, int col, int number)
     {
@@ -170,7 +164,6 @@ public class SudokuBoardController : MonoBehaviour
         undoStack.Push(move);
         redoStack.Clear();
         NotifyBoardChanged();
-        saveManager.AutoSave();
     }
     public void Undo()
     {
@@ -188,7 +181,6 @@ public class SudokuBoardController : MonoBehaviour
             bitMask.Place(r, c, move.oldValue);
         redoStack.Push(move);
         NotifyBoardChanged();
-        saveManager.AutoSave();
     }
     public void Redo()
     {
@@ -208,21 +200,18 @@ public class SudokuBoardController : MonoBehaviour
     public void ResetBoard()
     {
         if (initialData == null) return;
-        boardData.values = (int[])initialData.values.Clone();
-        boardData.solution = (int[])initialData.solution.Clone();
-        boardData.fixedCells = (bool[])initialData.fixedCells.Clone();
-        boardData.notesMask = (int[])initialData.notesMask.Clone();
+        boardData = initialData.Clone();
+        InitBitMask();
         undoStack.Clear();
         redoStack.Clear();
         NotifyBoardChanged();
     }
     public void SetInitialState(SudokuBoardData data)
     {
-        initialData = new SudokuBoardData();
-        initialData.values = (int[])data.values.Clone();
-        initialData.solution = (int[])data.solution.Clone();
-        initialData.fixedCells = (bool[])data.fixedCells.Clone();
-        initialData.notesMask = (int[])data.notesMask.Clone();
+        if (data == null)
+            return;
+
+        initialData = data.Clone();
     }
     public SudokuBoardData GetInitialData()
     {

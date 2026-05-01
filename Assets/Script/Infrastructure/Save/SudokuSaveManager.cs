@@ -6,6 +6,7 @@ public class SudokuSaveManager : MonoBehaviour
     [SerializeField] SudokuBoardController board;
     [SerializeField] SudokuTimer timer;
     [SerializeField] SudokuMistakeSystem mistakeSystem;
+    [SerializeField] SessionContext sessionContext;
     int currentSlot = 0;
     public void AutoSave()
     {
@@ -23,7 +24,7 @@ public class SudokuSaveManager : MonoBehaviour
             board = board.boardData,
             initialBoard = board.GetInitialData(),
             time = timer.GetTime(),
-            difficulty = (int)SudokuGameManager.Instance.difficulty,
+            difficulty = (int)sessionContext.SelectedDifficulty,
             undoStack = board.GetUndoStack() ?? new List<SudokuMove>(),
             redoStack = board.GetRedoStack() ?? new List<SudokuMove>(),
             mistakes = mistakeSystem.GetMistakes(),
@@ -43,14 +44,12 @@ public class SudokuSaveManager : MonoBehaviour
         currentSlot = slot;
         board.SetBoardData(data.board);
         board.SetUndoRedo(data.undoStack, data.redoStack);
-        board.AutoFillNotes();
-        Debug.Log("Notas celda 0: " + data.board.notesMask[0]);
         if (data.initialBoard != null)
         {
             board.SetInitialState(data.initialBoard);
         }
         timer.SetTime(data.time);
-        SudokuGameManager.Instance.difficulty =
+        sessionContext.SelectedDifficulty =
             (SudokuGameManager.Difficulty)data.difficulty;
         mistakeSystem.Init(data.mistakes);
         return true;
