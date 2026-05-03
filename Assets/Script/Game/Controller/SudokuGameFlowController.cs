@@ -1,27 +1,38 @@
 ﻿using UnityEngine;
 public class SudokuGameFlowController : MonoBehaviour
 {
-    SudokuGenerator generator = new SudokuGenerator();
+    SudokuGeneratorPro generator = new SudokuGeneratorPro();
+    [Header("Debug (temporal)")]
+    [SerializeField] bool enableSudokuDebug;
+    [SerializeField] bool logEachTechniqueStep;
     [SerializeField] SudokuBoardView boardView;
     [SerializeField] SudokuSaveManager saveManager;
     [SerializeField] SudokuBoardController boardController;
     [SerializeField] SudokuDifficultyUI difficultyUI;
     [SerializeField] SudokuMistakeSystem mistakeSystem;
     [SerializeField] SudokuTimer timer;
+    [SerializeField] SessionContext sessionContext;
     void Start()
     {
+        SudokuDebugMode.Enabled = enableSudokuDebug;
+        SudokuDebugMode.LogEachTechniqueStep = logEachTechniqueStep;
         mistakeSystem.OnGameOver += OnGameOver;
-        Initialize();
     }
     public void Initialize()
     {
-        int slot = SudokuGameSession.SelectedSlot;
+        if (sessionContext == null)
+        {
+            Debug.LogError("SessionContext no asignado en SudokuGameFlowController");
+            return;
+        }
+
+        int slot = sessionContext.SelectedSlot;
         if (slot < 0)
         {
             Debug.LogError("No hay slot seleccionado");
             return;
         }
-        if (SudokuGameSession.LoadFromSave)
+        if (sessionContext.LoadFromSave)
         {
             bool loaded = saveManager.LoadGame(slot);
             if (loaded)
@@ -38,6 +49,7 @@ public class SudokuGameFlowController : MonoBehaviour
     }
     void LoadBoardToView()
     {
+        EnsureBoardCreated();
         var data = boardController.GetBoardData();
         boardView.UpdateBoard(
             data.values,
@@ -47,64 +59,23 @@ public class SudokuGameFlowController : MonoBehaviour
     }
     void GenerateGame()
     {
-        var difficulty = SudokuGameManager.Instance.difficulty;
-        SudokuTechniques solver = new SudokuTechniques(difficulty);
-        SudokuDifficultyEvaluator evaluator = new SudokuDifficultyEvaluator();
-        int removeAmount = GetRemoveAmount();
-        int[,] solution = generator.GenerateSolution();
-        int[,] puzzle = generator.CreatePuzzle(solution, removeAmount);
-        int steps = CountSteps(puzzle, solver);
-        var diff = evaluator.Evaluate(puzzle, steps);
-        Debug.Log($"Real: {diff} | Selected: {difficulty} | Steps: {steps}");
-        difficultyUI.SetDifficulty(SudokuGameManager.Instance.difficulty);
-        var data = generator.ConvertToBoardData(solution, puzzle);
+        EnsureBoardCreated();
+        var difficulty = sessionContext.SelectedDifficulty;
+        var data = generator.Generate(difficulty);
+        difficultyUI.SetDifficulty(difficulty);
         boardController.SetBoardData(data);
         boardController.SetInitialState(data);
         boardView.UpdateBoard(data.values, data.fixedCells, data.notesMask);
     }
-    int GetRemoveAmount()
-    {
-        return SudokuGameManager.Instance.difficulty switch
-        {
-            SudokuGameManager.Difficulty.Easy => Random.Range(28, 32),
-            SudokuGameManager.Difficulty.Medium => Random.Range(36, 42),
-            SudokuGameManager.Difficulty.Hard => Random.Range(42, 50),
-            SudokuGameManager.Difficulty.Expert => Random.Range(50, 56),
-            _ => 40
-        };
-    }
-    int CountSteps(int[,] puzzle, SudokuTechniques solver)
-    {
-        int[,] board = (int[,])puzzle.Clone();
-        int[] notes = new int[81];
-
-        SudokuContext ctx = new SudokuContext
-        {
-            board = board,
-            notesMask = notes
-        };
-
-        int steps = 0;
-
-        while (solver.GetHint(ctx, out var hint))
-        {
-            foreach (var a in hint.actions)
-            {
-                if (a.type == SudokuActionType.Place)
-                {
-                    int r = a.index / 9;
-                    int c = a.index % 9;
-                    board[r, c] = a.value;
-                }
-            }
-
-            steps++;
-        }
-
-        return steps;
-    }
     void OnGameOver()
     {
         Debug.Log("Mostrar pantalla de derrota");
+    }
+
+    void EnsureBoardCreated()
+    {
+        var cells = boardView.GetCells();
+        if (cells[0, 0] == null)
+            boardView.CreateBoard();
     }
 }

@@ -117,20 +117,14 @@ public class SudokuHighlightSystem : MonoBehaviour
     public void ShowHint(SudokuHint hint)
     {
         ClearHighlights();
-
-        // 🟡 Celdas importantes
         foreach (var index in hint.highlightCells)
         {
             HighlightCell(index, Color.yellow);
         }
-
-        // 🔴 eliminaciones
         foreach (var index in hint.affectedCells)
         {
             HighlightCell(index, Color.red);
         }
-
-        // 🔵 opcional: mostrar número
         int number = GetNumberFromMask(hint.candidateMask);
         HighlightCandidate(number);
     }
@@ -140,7 +134,6 @@ public class SudokuHighlightSystem : MonoBehaviour
         int c = index % 9;
         board[r, c].SetHighlight(color);
     }
-
     int GetNumberFromMask(int mask)
     {
         for (int i = 0; i < 9; i++)
@@ -149,9 +142,7 @@ public class SudokuHighlightSystem : MonoBehaviour
 
         return -1;
     }
-
     void HighlightCandidate(int number)
     {
-        // opcional (puedes dejarlo vacío por ahora)
     }
 }

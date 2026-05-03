@@ -1,26 +1,28 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 public class SudokuPauseUI : MonoBehaviour
 {
     [SerializeField] GameObject panel;
+    [SerializeField] GameObject pauseButton;
     [SerializeField] SudokuBoardController boardController;
     [SerializeField] SudokuTimer timer;
     [SerializeField] SudokuInputController inputController;
     [SerializeField] SudokuBoardView boardView;
+    [SerializeField] SudokuSessionController sessionController;
+    [SerializeField] SudokuGameManager gameManager;
     public void OpenPause()
     {
-        SudokuGameManager.Instance.PauseGame();
-        int slot = SudokuGameSession.SelectedSlot;
-        if (slot >= 0)
-        {
-            FindFirstObjectByType<SudokuSaveManager>().SaveGame(slot);
-        }
+        gameManager.PauseGame();
+        sessionController?.SaveCurrentSlot();
         panel.SetActive(true);
+        if (pauseButton != null)
+            pauseButton.SetActive(false);
     }
     public void Resume()
     {
         panel.SetActive(false);
-        SudokuGameManager.Instance.ResumeGame();
+        if (pauseButton != null)
+            pauseButton.SetActive(true);
+        gameManager.ResumeGame();
     }
     public void RestartGame()
     {
@@ -34,15 +36,14 @@ public class SudokuPauseUI : MonoBehaviour
         inputController.ClearSelection();
         timer.ResetTime();
         timer.StartTimer();
-        SudokuGameManager.Instance.gameState = SudokuGameState.Playing;
+        panel.SetActive(false);
+        if (pauseButton != null)
+            pauseButton.SetActive(true);
+        gameManager.SetGameState(SudokuGameState.Playing);
     }
     public void GoToMenu()
     {
-        int slot = SudokuGameSession.SelectedSlot;
-        if (slot >= 0)
-        {
-            FindFirstObjectByType<SudokuSaveManager>().SaveGame(slot);
-        }
-        SceneManager.LoadScene("MainMenu");
+        if (sessionController != null)
+            sessionController.SaveAndGoToMenu();
     }
 }

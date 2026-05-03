@@ -7,4 +7,17 @@ public class SudokuBoardData
     public int[] notesMask = new int[81];
     public float time;
     public int difficulty;
+
+    public SudokuBoardData Clone()
+    {
+        return new SudokuBoardData
+        {
+            values = (int[])values.Clone(),
+            solution = (int[])solution.Clone(),
+            fixedCells = (bool[])fixedCells.Clone(),
+            notesMask = (int[])notesMask.Clone(),
+            time = time,
+            difficulty = difficulty
+        };
+    }
 }

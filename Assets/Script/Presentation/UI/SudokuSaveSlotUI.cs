@@ -1,10 +1,12 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+
 public class SudokuSaveSlotUI : MonoBehaviour
 {
     [SerializeField] TextMeshProUGUI slotLabel;
     [SerializeField] Button button;
+    [SerializeField] SudokuSessionController sessionController;
     int slotIndex;
     SudokuSaveManager saveManager;
     public void Init(int index, SudokuSaveManager manager)
@@ -19,17 +21,8 @@ public class SudokuSaveSlotUI : MonoBehaviour
     void OnClick()
     {
         Debug.Log($"Cargando slot {slotIndex}");
-        SudokuGameSession.SelectedSlot = slotIndex;
-        if (saveManager.HasSlot(slotIndex))
-        {
-            SudokuGameSession.LoadFromSave = true;
-        }
-        else
-        {
-            SudokuGameSession.LoadFromSave = false;
-            SudokuGameSession.SelectedDifficulty = SudokuGameManager.Difficulty.Medium;
-        }
-        UnityEngine.SceneManagement.SceneManager.LoadScene("Game");
+        if (sessionController != null)
+            sessionController.OpenSlot(slotIndex, SudokuGameManager.Difficulty.Medium);
     }
     public void Refresh()
     {

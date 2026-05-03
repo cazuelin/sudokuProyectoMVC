@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 public class SudokuInputController : MonoBehaviour
 {
@@ -6,7 +5,7 @@ public class SudokuInputController : MonoBehaviour
     [SerializeField] SudokuBoardView boardView;
     [SerializeField] SudokuHighlightSystem highlightSystem;
     [SerializeField] SudokuBoardController boardController;
-    [SerializeField] SudokuSaveManager saveManager;
+    [SerializeField] SessionContext sessionContext;
     SudokuCell selectedCell;
     bool noteMode;
     [SerializeField] int maxHints = 3;
@@ -68,7 +67,7 @@ public class SudokuInputController : MonoBehaviour
 
             Debug.Log($"Hint: {hint.technique}");
 
-            // aplicar acción real (opcional)
+            // aplicar acciï¿½n real (opcional)
             if (hint.actions.Count > 0)
             {
                 boardController.ApplyActions(hint.actions);
@@ -77,7 +76,8 @@ public class SudokuInputController : MonoBehaviour
     }
     bool IsPaused()
     {
-        return SudokuGameManager.Instance.gameState == SudokuGameState.Paused;
+        return sessionContext != null &&
+               sessionContext.GameState == SudokuGameState.Paused;
     }
     public void ClearSelection()
     {

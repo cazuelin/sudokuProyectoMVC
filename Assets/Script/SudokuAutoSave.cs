@@ -3,6 +3,7 @@ public class SudokuAutoSave : MonoBehaviour
 {
     [SerializeField] SudokuSaveManager saveManager;
     [SerializeField] SudokuBoardController board;
+    [SerializeField] SessionContext sessionContext;
     float saveDelay = 1.0f;
     float timer;
     bool dirty;
@@ -31,7 +32,7 @@ public class SudokuAutoSave : MonoBehaviour
     }
     void Save()
     {
-        int slot = SudokuGameSession.SelectedSlot;
+        int slot = sessionContext.SelectedSlot;
         if (slot < 0) return;
         saveManager.SaveGame(slot);
         Debug.Log("AutoSave ejecutado");

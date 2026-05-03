@@ -3,7 +3,6 @@ public enum SudokuActionType
     Place,
     RemoveNotes
 }
-
 public struct SudokuAction
 {
     public SudokuActionType type;

@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 public class SudokuGameManager : MonoBehaviour
 {
-    public static SudokuGameManager Instance;
+    [SerializeField] SessionContext sessionContext;
     [SerializeField] SudokuBoardView boardView;
     [SerializeField] SudokuTimer timer;
     [Header("Controllers")]
@@ -16,25 +16,29 @@ public class SudokuGameManager : MonoBehaviour
         Easy,
         Medium,
         Hard,
-        Expert
+        Expert,
+        Extreme
     }
     public Difficulty difficulty;
-    void Awake()
-    {
-        Instance = this;
-    }
     void Start()
     {
+        if (sessionContext == null)
+        {
+            Debug.LogError("SessionContext no asignado en SudokuGameManager");
+            return;
+        }
+
         gameState = SudokuGameState.Generating;
+        sessionContext.GameState = gameState;
         boardView.CreateBoard();
         var cells = boardView.GetCells();
         highlightSystem.Init(cells, boardController);
-        if (!SudokuGameSession.LoadFromSave)
-        {
-            difficulty = SudokuGameSession.SelectedDifficulty;
-        }
+        difficulty = sessionContext.SelectedDifficulty;
+        hintSystem.Init(difficulty);
+
         flowController.Initialize();
         gameState = SudokuGameState.Playing;
+        sessionContext.GameState = gameState;
         timer.StartTimer();
         boardController.OnBoardChanged += () =>
         {
@@ -49,11 +53,19 @@ public class SudokuGameManager : MonoBehaviour
     public void PauseGame()
     {
         gameState = SudokuGameState.Paused;
+        sessionContext.GameState = gameState;
         timer.StopTimer();
     }
     public void ResumeGame()
     {
         gameState = SudokuGameState.Playing;
+        sessionContext.GameState = gameState;
         timer.StartTimer();
+    }
+
+    public void SetGameState(SudokuGameState newState)
+    {
+        gameState = newState;
+        sessionContext.GameState = newState;
     }
 }

@@ -445,10 +445,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SudokuPauseUI
   panel: {fileID: 1530686166}
+  pauseButton: {fileID: 0}
   boardController: {fileID: 978332227}
   timer: {fileID: 1045420959}
   inputController: {fileID: 1264219407}
   boardView: {fileID: 637565695}
+  sessionController: {fileID: 422900876}
+  gameManager: {fileID: 303101894}
 --- !u!1 &116448992
 GameObject:
   m_ObjectHideFlags: 0
@@ -1202,6 +1205,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0e982581c84692a47947723879de34a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SudokuGameManager
+  sessionContext: {fileID: 11400000, guid: e52287b975d9c234b999bbd701fb902b, type: 2}
   boardView: {fileID: 637565695}
   timer: {fileID: 1045420959}
   inputController: {fileID: 1264219407}
@@ -1625,6 +1629,54 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 421107647}
   m_CullTransparentMesh: 1
+--- !u!1 &422900875
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 422900877}
+  - component: {fileID: 422900876}
+  m_Layer: 0
+  m_Name: SessionController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &422900876
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 422900875}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ff8a9c6c8197684419d23bfbc575bf7b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SudokuSessionController
+  gameSceneName: Game
+  menuSceneName: MainMenu
+  saveManager: {fileID: 1228364842}
+  sessionContext: {fileID: 11400000, guid: e52287b975d9c234b999bbd701fb902b, type: 2}
+--- !u!4 &422900877
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 422900875}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &436051230
 GameObject:
   m_ObjectHideFlags: 0
@@ -2573,7 +2625,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ab17574d7d7de3247aad520f9a34f0a1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SudokuBoardController
-  saveManager: {fileID: 1228364842}
 --- !u!4 &978332228
 Transform:
   m_ObjectHideFlags: 0
@@ -3871,6 +3922,7 @@ MonoBehaviour:
   board: {fileID: 978332227}
   timer: {fileID: 1045420959}
   mistakeSystem: {fileID: 137859007}
+  sessionContext: {fileID: 11400000, guid: e52287b975d9c234b999bbd701fb902b, type: 2}
 --- !u!4 &1228364843
 Transform:
   m_ObjectHideFlags: 0
@@ -3919,7 +3971,7 @@ MonoBehaviour:
   boardView: {fileID: 637565695}
   highlightSystem: {fileID: 162226598}
   boardController: {fileID: 978332227}
-  saveManager: {fileID: 1228364842}
+  sessionContext: {fileID: 11400000, guid: e52287b975d9c234b999bbd701fb902b, type: 2}
   maxHints: 3
 --- !u!4 &1264219408
 Transform:
@@ -6400,6 +6452,53 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1829586010}
   m_CullTransparentMesh: 1
+--- !u!1 &1864672401
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1864672403}
+  - component: {fileID: 1864672402}
+  m_Layer: 0
+  m_Name: SudokuAutoSave
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1864672402
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1864672401}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1f8c113c2823ce943b05f247ae9cd6eb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SudokuAutoSave
+  saveManager: {fileID: 1228364842}
+  board: {fileID: 978332227}
+  sessionContext: {fileID: 11400000, guid: e52287b975d9c234b999bbd701fb902b, type: 2}
+--- !u!4 &1864672403
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1864672401}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1871608516
 GameObject:
   m_ObjectHideFlags: 0
@@ -6783,6 +6882,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SudokuAutoSave
   saveManager: {fileID: 1228364842}
   board: {fileID: 978332227}
+  sessionContext: {fileID: 11400000, guid: e52287b975d9c234b999bbd701fb902b, type: 2}
 --- !u!1 &1890049366
 GameObject:
   m_ObjectHideFlags: 0
@@ -6812,12 +6912,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5cb36c421e55a0e429d4ab0e0f3f62ce, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SudokuGameFlowController
+  enableSudokuDebug: 1
+  logEachTechniqueStep: 1
   boardView: {fileID: 637565695}
   saveManager: {fileID: 1228364842}
   boardController: {fileID: 978332227}
   difficultyUI: {fileID: 848896744}
   mistakeSystem: {fileID: 137859007}
   timer: {fileID: 1045420959}
+  sessionContext: {fileID: 11400000, guid: e52287b975d9c234b999bbd701fb902b, type: 2}
 --- !u!4 &1890049368
 Transform:
   m_ObjectHideFlags: 0
@@ -8040,3 +8143,5 @@ SceneRoots:
   - {fileID: 1264219408}
   - {fileID: 978332228}
   - {fileID: 1890049368}
+  - {fileID: 422900877}
+  - {fileID: 1864672403}
