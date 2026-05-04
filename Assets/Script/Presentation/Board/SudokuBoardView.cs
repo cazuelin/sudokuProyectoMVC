@@ -32,4 +32,17 @@ public class SudokuBoardView : MonoBehaviour
         }
     }
     public SudokuCell[,] GetCells() => cells;
+
+    public void SetCellError(int row, int col, bool active)
+    {
+        if (cells[row, col] != null)
+            cells[row, col].SetError(active);
+    }
+
+    public void ClearAllErrors()
+    {
+        for (int r = 0; r < SIZE; r++)
+            for (int c = 0; c < SIZE; c++)
+                cells[r, c]?.SetError(false);
+    }
 }

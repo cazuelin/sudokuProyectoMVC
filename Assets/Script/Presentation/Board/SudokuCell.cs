@@ -16,6 +16,7 @@ public class SudokuCell : MonoBehaviour
     public static Action<SudokuCell> OnCellClicked;
     public void Render(int value, bool isFixed, int notesMask)
     {
+        SetError(false);
         numberText.text = value == 0 ? "" : value.ToString();
         numberText.color = isFixed ? Color.black : Color.blue;
         for (int i = 0; i < 9; i++)

@@ -73,7 +73,7 @@ public class SudokuBoardController : MonoBehaviour
     public bool CheckWin()
     {
         for (int i = 0; i < 81; i++)
-            if (boardData.values[i] == 0)
+            if (boardData.values[i] == 0 || boardData.values[i] != boardData.solution[i])
                 return false;
         return true;
     }
