@@ -9,6 +9,8 @@ public class SudokuPauseUI : MonoBehaviour
     [SerializeField] SudokuBoardView boardView;
     [SerializeField] SudokuSessionController sessionController;
     [SerializeField] SudokuGameManager gameManager;
+    [SerializeField] SudokuGameFlowController gameFlowController;
+
     public void OpenPause()
     {
         gameManager.PauseGame();
@@ -26,21 +28,38 @@ public class SudokuPauseUI : MonoBehaviour
     }
     public void RestartGame()
     {
-        boardController.ResetBoard();
-        var data = boardController.GetBoardData();
-        boardView.UpdateBoard(
-            data.values,
-            data.fixedCells,
-            data.notesMask
-        );
-        inputController.ClearSelection();
-        timer.ResetTime();
-        timer.StartTimer();
+        if (gameFlowController != null)
+        {
+            gameFlowController.RestartLevel();
+        }
+        else
+        {
+            boardController.ResetBoard();
+            var data = boardController.GetBoardData();
+            boardView.UpdateBoard(
+                data.values,
+                data.fixedCells,
+                data.notesMask
+            );
+            inputController.ClearSelection();
+            timer.ResetTime();
+            timer.StartTimer();
+            gameManager.SetGameState(SudokuGameState.Playing);
+        }
+
         panel.SetActive(false);
         if (pauseButton != null)
             pauseButton.SetActive(true);
-        gameManager.SetGameState(SudokuGameState.Playing);
     }
+
+    public void NewGame()
+    {
+        panel.SetActive(false);
+        if (pauseButton != null)
+            pauseButton.SetActive(true);
+        gameFlowController?.OpenNewGamePanel();
+    }
+
     public void GoToMenu()
     {
         if (sessionController != null)

@@ -3,5 +3,6 @@ public enum SudokuGameState
     Generating,
     Playing,
     Paused,
-    Completed
+    Victory,
+    Defeat
 }

@@ -8,13 +8,48 @@ public class SudokuMenuSlotsController : MonoBehaviour
     [SerializeField] SudokuSaveSlotItem prefab;
     [SerializeField] Transform container;
     [SerializeField] int slotCount = 3;
+    [SerializeField]SudokuDifficultySelectionPanel difficultySelectionPanel;
 
     readonly List<SudokuSaveSlotItem> slotViews = new List<SudokuSaveSlotItem>();
 
     void Start()
     {
+        // Si no hay panel asignado, busca en la escena
+        if (difficultySelectionPanel == null)
+        {
+            difficultySelectionPanel = FindFirstObjectByType<SudokuDifficultySelectionPanel>();
+            Debug.Log($"Encontrado panel de dificultad: {difficultySelectionPanel != null}");
+        }
+
+        if (difficultySelectionPanel != null)
+            difficultySelectionPanel.OnDifficultySelected += HandleDifficultySelected;
+        else
+            Debug.LogWarning("No se encontró panel de dificultad en SudokuMenuSlotsController");
+
+        if (prefab == null || container == null)
+        {
+            Debug.LogWarning($"SudokuMenuSlotsController en '{name}' no tiene prefab o container asignado. No se generarán slots.");
+            return;
+        }
+
         BuildView();
         RefreshAll();
+    }
+
+    void OnDestroy()
+    {
+        if (difficultySelectionPanel != null)
+            difficultySelectionPanel.OnDifficultySelected -= HandleDifficultySelected;
+
+        foreach (var slot in slotViews)
+        {
+            if (slot == null)
+                continue;
+
+            slot.OnContinueRequested -= HandleContinueRequested;
+            slot.OnDeleteRequested -= HandleDeleteRequested;
+            slot.OnCreateRequested -= HandleCreateRequested;
+        }
     }
 
     void BuildView()
@@ -31,19 +66,6 @@ public class SudokuMenuSlotsController : MonoBehaviour
             slot.OnDeleteRequested += HandleDeleteRequested;
             slot.OnCreateRequested += HandleCreateRequested;
             slotViews.Add(slot);
-        }
-    }
-
-    void OnDestroy()
-    {
-        foreach (var slot in slotViews)
-        {
-            if (slot == null)
-                continue;
-
-            slot.OnContinueRequested -= HandleContinueRequested;
-            slot.OnDeleteRequested -= HandleDeleteRequested;
-            slot.OnCreateRequested -= HandleCreateRequested;
         }
     }
 
@@ -84,7 +106,16 @@ public class SudokuMenuSlotsController : MonoBehaviour
         RefreshSlot(slotIndex);
     }
 
-    void HandleCreateRequested(int slotIndex, SudokuGameManager.Difficulty difficulty)
+    void HandleCreateRequested(int slotIndex)
+    {
+        Debug.Log($"HandleCreateRequested llamado para slot {slotIndex}, panel: {difficultySelectionPanel}");
+        if (difficultySelectionPanel != null)
+            difficultySelectionPanel.Open(slotIndex);
+        else
+            Debug.LogWarning("Difficulty selection panel no asignado en SudokuMenuSlotsController");
+    }
+
+    void HandleDifficultySelected(int slotIndex, SudokuGameManager.Difficulty difficulty)
     {
         sessionController.StartNewGame(slotIndex, difficulty);
     }

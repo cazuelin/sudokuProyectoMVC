@@ -12,12 +12,14 @@ public class SudokuCell : MonoBehaviour
     [SerializeField] Image image;
     [SerializeField] GameObject notesGrid;
     [SerializeField] TMP_Text[] notes;
-    [SerializeField] GameObject errorHighlight;
+    private Color originalColor;
     public static Action<SudokuCell> OnCellClicked;
     public void Render(int value, bool isFixed, int notesMask)
     {
+        SetError(false);
         numberText.text = value == 0 ? "" : value.ToString();
         numberText.color = isFixed ? Color.black : Color.blue;
+        originalColor = numberText.color;
         for (int i = 0; i < 9; i++)
         {
             bool active = (notesMask & (1 << i)) != 0;
@@ -33,8 +35,16 @@ public class SudokuCell : MonoBehaviour
     {
         OnCellClicked?.Invoke(this);
     }
-    public void SetError(bool active)
+    public void SetError(bool active, int number = 0)
     {
-        errorHighlight.SetActive(active);
+        if (active)
+        {
+            numberText.text = number.ToString();
+            numberText.color = Color.red;
+        }
+        else
+        {
+            numberText.color = originalColor;
+        }
     }
 }
