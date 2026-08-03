@@ -1613,6 +1613,7 @@ MonoBehaviour:
   boardController: {fileID: 978332227}
   flowController: {fileID: 1890049367}
   highlightSystem: {fileID: 162226598}
+  hintSystem: {fileID: 220083403}
   gameState: 0
   difficulty: 1
 --- !u!4 &303101895
