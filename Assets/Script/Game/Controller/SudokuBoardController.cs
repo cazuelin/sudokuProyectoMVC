@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Drawing;
 using UnityEngine;
-using static UnityEngine.Rendering.DebugUI;
 public class SudokuBoardController : MonoBehaviour
 {
     public SudokuBoardData boardData { get; private set; }//guarda el tablero actual
