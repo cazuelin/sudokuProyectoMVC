@@ -23,7 +23,11 @@ public class SudokuSaveSlotItem : MonoBehaviour
     public event Action<int> OnDeleteRequested;//El jugador quiere borrar este slot.
     public event Action<int> OnCreateRequested;//El jugador quiere crear una partida en este slot.
     public void Init(int index)//Esta función inicializa el slot.
-        //recibe int index : El índice del slot.
+    {
+        Init(index, $"Slot {index + 1}");
+    }
+
+    public void Init(int index, string slotTitle)//Esta función inicializa el slot con un título visible.
     {
         slotIndex = index;//Guarda el índice recibido.
         createButton.onClick.RemoveAllListeners();//Limpia eventos anteriores de los botones.
@@ -35,9 +39,7 @@ public class SudokuSaveSlotItem : MonoBehaviour
         createButton.onClick.AddListener(OnCreate);//Cuando presionas createButton, llama: OnCreate()
         continueButton.onClick.AddListener(OnContinue);//Cuando presionas continueButton, llama: OnContinue()
         deleteButton.onClick.AddListener(OnDelete);//Cuando presionas deleteButton, llama: OnDelete()
-        title.text = $"Slot {slotIndex + 1}";//Actualiza el texto del título.
-        //Si: slotIndex = 0  entonces muestra : Slot 1
-        //Si: slotIndex = 2  entonces muestra : Slot 3
+        title.text = slotTitle;
     }
     public void RenderEmpty()//Esta función dibuja el slot cuando está vacío.
     {

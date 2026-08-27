@@ -15,20 +15,20 @@ public class NakedPairTechnique : ISudokuTechnique//La técnica Naked Pair signi
     //out SudokuHint hint : Esto permite devolver información de la jugada encontrada.
 
     {
-        for (int row = 0; row < 9; row++)//primero revisa las filas
+        for (int row = 0; row < SudokuRules.Size; row++)//primero revisa las filas
         {
             if (TryInUnit(ctx, SudokuSolverUtils.GetRowUnit(row), out hint))//cada vuelta obtiene un fila completa
                 //Ejemplo: GetRowUnit(0) devuelve [0, 1, 2, 3, 4, 5, 6, 7, 8] Eso representa la primera fila.
                 return true;//Si encuentra algo, también retorna true.
         }
-        for (int col = 0; col < 9; col++)//despues revisa las columnas
+        for (int col = 0; col < SudokuRules.Size; col++)//despues revisa las columnas
         {
             if (TryInUnit(ctx, SudokuSolverUtils.GetColUnit(col), out hint))//cada vuelta obtine una columna completa
                 //GetColUnit(c) devuelve los índices de una columna.
                 //Ejemplo: GetColUnit(0) [0, 9, 18, 27, 36, 45, 54, 63, 72]
                 return true;//Si encuentra algo, también retorna true.
         }
-        for (int box = 0; box < 9; box++)//despues revisa las cajas 3x3
+        for (int box = 0; box < SudokuRules.TotalBoxCount; box++)//despues revisa las cajas
         {
             if (TryInUnit(ctx, SudokuSolverUtils.GetBoxUnit(box), out hint))//cada vuelta obtiene los indexes de la caja
                 //Las cajas se numeran así:
@@ -59,14 +59,12 @@ public class NakedPairTechnique : ISudokuTechnique//La técnica Naked Pair signi
         //mask de candidatos 2 y 7 -> [12, 15]
         //mask de candidatos 1 y 9 -> [10]
         //¿Por qué usa Dictionary? Porque necesita agrupar celdas que tengan exactamente los mismos dos candidatos.
-        for (int i = 0; i < 9; i++)//Recorre las 9 celdas de la unidad.
+        for (int i = 0; i < unit.Length; i++)//Recorre las celdas de la unidad.
         {
             int index = unit[i];//Obtiene el índice real de la celda.
             //ejemplo unit[i] = 23 Eso significa celda índice 23.
-            int r = index / 9;//Convierte el índice lineal a fila
-            //si index = 23 entonces seria int r = index / 9 que seria r = 23 / 9 que son 2
-            int c = index % 9;//Convierte el índice lineal a columna.
-            //si index = 23 entonces seria int c = index % 9 que seria c = 23 / 9  que son 2 pero aqui es el sobrante osea 9 * 2 = 18 y de 18 a 23 son 5
+            int r = SudokuRules.GetRow(index);//Convierte el índice lineal a fila
+            int c = SudokuRules.GetCol(index);//Convierte el índice lineal a columna.
             
             //entonces index 23 = board[2, 5]
             if (ctx.board[r, c] != 0)//Si la celda ya tiene número, la salta.
@@ -108,7 +106,7 @@ public class NakedPairTechnique : ISudokuTechnique//La técnica Naked Pair signi
             //b = es la segunda celda del par.
             //kv.Value = Es la lista de celdas que tienen ese mismo par.
 
-            for (int i = 0; i < 9; i++)//Vuelve a recorrer las 9 celdas de la unidad.
+            for (int i = 0; i < unit.Length; i++)//Vuelve a recorrer las celdas de la unidad.
             {
                 int index = unit[i];//Obtiene la celda actual.
                 if (index == a || index == b)
@@ -117,10 +115,8 @@ public class NakedPairTechnique : ISudokuTechnique//La técnica Naked Pair signi
                     //Queremos borrar esos candidatos de las otras celdas de la unidad.
                     continue;
 
-                int r = index / 9; //Convierte el índice a fila y salta celdas ya ocupadas.
-                //si index = 23 entonces seria int r = index / 9 que seria r = 23 / 9 que son 2
-                int c = index % 9; //Convierte el índice a columna y salta celdas ya ocupadas.
-                //si index = 23 entonces seria int c = index % 9 que seria c = 23 / 9  que son 2 pero aqui es el sobrante osea 9 * 2 = 18 y de 18 a 23 son 5
+                int r = SudokuRules.GetRow(index); //Convierte el índice a fila y salta celdas ya ocupadas.
+                int c = SudokuRules.GetCol(index); //Convierte el índice a columna y salta celdas ya ocupadas.
                 if (ctx.board[r, c] != 0)//entonces index 23 = board[2, 5] y si esta celda esta ocupada por un numero la salta
                     //Solo se eliminan notas de celdas vacías.
                     continue;

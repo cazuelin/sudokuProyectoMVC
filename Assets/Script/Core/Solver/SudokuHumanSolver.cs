@@ -34,10 +34,8 @@ public class SudokuHumanSolver
             {
                 if (action.type == SudokuActionType.Place)//Si la acción es de tipo Place, significa: Hay que colocar un número en el tablero.
                 {
-                    int r = action.index / 9;//Convierte el índice lineal a fila
-                    //si index = 23 entonces seria int r = action.index / 9 que seria r = 23 / 9 que son 2
-                    int c = action.index % 9;//Convierte el índice lineal a columna.
-                    //si index = 23 entonces seria int c = action.index % 9 que seria c = 23 / 9  que son 2 pero aqui es el sobrante osea 9 * 2 = 18 y de 18 a 23 son 5
+                    int r = SudokuRules.GetRow(action.index);//Convierte el índice lineal a fila
+                    int c = SudokuRules.GetCol(action.index);//Convierte el índice lineal a columna.
 
                     //entonces index 23 = board[2, 5]
                     ctx.board[r, c] = action.value;//Coloca el número en el tablero.
@@ -65,17 +63,17 @@ public class SudokuHumanSolver
     }
     void InitializeCandidates(SudokuContext ctx)//Esta función calcula los candidatos posibles para cada celda vacía.
     {
-        for (int i = 0; i < 81; i++)//Recorre las 81 celdas del tablero.Usa índice lineal: de 0 a 80
+        for (int i = 0; i < SudokuRules.CellCount; i++)//Recorre las celdas del tablero.Usa índice lineal.
         {
-            if (ctx.board[i / 9, i % 9] != 0)//Convierte i a fila/columna: Si esa celda ya tiene número, borra sus notas
+            if (ctx.board[SudokuRules.GetRow(i), SudokuRules.GetCol(i)] != 0)//Convierte i a fila/columna: Si esa celda ya tiene número, borra sus notas
             {
                 ctx.notesMask[i] = 0;//borra las notas
                 continue;//Y pasa a la siguiente celda.
             }
             int mask = 0;//Crea un mask vacío para guardar candidatos.
-            for (int n = 1; n <= 9; n++)//Prueba números del 1 al 9.
+            for (int n = 1; n <= SudokuRules.MaxValue; n++)//Prueba números del 1 al máximo del tablero.
             {
-                if (ctx.CanPlace(i / 9, i % 9, n))//Pregunta si el número n puede colocarse en esa celda según las reglas del Sudoku.
+                if (ctx.CanPlace(SudokuRules.GetRow(i), SudokuRules.GetCol(i), n))//Pregunta si el número n puede colocarse en esa celda según las reglas del Sudoku.
                     //Conviertiendo i a fila/columna y Si puede, agrega ese número al mask.
                     mask |= 1 << (n - 1);//esta funcion enciende el mask del numero que este en n
                     //ejemplo Si puede colocar 5: mask |= 1 << (5 - 1); Eso enciende el bit del candidato 5.
@@ -93,8 +91,8 @@ public class SudokuHumanSolver
     }
     bool IsSolved(int[,] board)//Esta función revisa si el tablero está completo.
     {
-        for (int i = 0; i < 81; i++)//Recorre las 81 celdas.
-            if (board[i / 9, i % 9] == 0)//Convierte i a fila/columna para calcular la celda y pasarla a index y Si encuentra un 0,
+        for (int i = 0; i < SudokuRules.CellCount; i++)//Recorre las celdas.
+            if (board[SudokuRules.GetRow(i), SudokuRules.GetCol(i)] == 0)//Convierte i a fila/columna para calcular la celda y pasarla a index y Si encuentra un 0,
             //significa que todavía hay una celda vacía:
                 return false;//si hay un cero aun entonces devuelve false
         return true;//Si termina todo el ciclo sin encontrar ceros:

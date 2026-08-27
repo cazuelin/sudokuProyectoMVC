@@ -82,10 +82,10 @@ public class SudokuSolver
         bestRow = -1;//Todavía no encontré ninguna celda vacía.
         bestCol = -1;//Todavía no encontré ninguna celda vacía.
         candidateMask = 0;//Todavía no hay candidatos.
-        int bestCount = 10;//Como en Sudoku solo puede haber máximo 9 candidatos, pone 10 para que cualquier celda encontrada sea mejor.
-        for (int row = 0; row < 9; row++)//Recorre todas las celdas del tablero, fila por fila.
+        int bestCount = SudokuRules.Size + 1;//Como en Sudoku solo puede haber máximo Size candidatos, pone Size + 1 para que cualquier celda encontrada sea mejor.
+        for (int row = 0; row < SudokuRules.Size; row++)//Recorre todas las celdas del tablero, fila por fila.
         {
-            for (int col = 0; col < 9; col++)//Recorre todas las celdas del tablero columna por columna
+            for (int col = 0; col < SudokuRules.Size; col++)//Recorre todas las celdas del tablero columna por columna
             {
                 if (board[row, col] != 0)//Si la celda no está vacía, la salta.
                     continue;
@@ -122,7 +122,7 @@ public class SudokuSolver
     int BuildCandidateMask(int row, int col)//Esta función crea una máscara de bits con todos los números posibles para una celda.
     {
         int mask = 0;//Eso significa que todavía no hay ningún candidato.
-        for (int num = 1; num <= 9; num++)//Luego revisa números del 1 al 9:
+        for (int num = 1; num <= SudokuRules.MaxValue; num++)//Luego revisa números del 1 al máximo del tablero:
         {
             if (bitMask.CanPlace(row, col, num))//Para cada número pregunta:Si ese número se puede colocar, lo agrega al mask:
                 mask |= 1 << (num - 1);

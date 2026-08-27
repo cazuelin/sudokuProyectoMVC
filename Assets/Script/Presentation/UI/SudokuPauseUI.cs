@@ -1,79 +1,190 @@
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
+
 public class SudokuPauseUI : MonoBehaviour
 {
-    [SerializeField] GameObject panel;//Es el panel visual de pausa.
-    //Se activa cuando pausas: panel.SetActive(true);
-    //Y se oculta cuando reanudas: panel.SetActive(false);
-    [SerializeField] GameObject pauseButton;//Es el botón visible para abrir la pausa.
-    //Cuando el panel de pausa está abierto, este botón se oculta: pauseButton.SetActive(false);
-    //Cuando sales de pausa, vuelve a mostrarse.
+    [SerializeField] GameObject panel;
+    [SerializeField] GameObject pauseButton;
+    [SerializeField] GameObject settingsPanel;//El panel de ajustes "PanelAjustes" creado DENTRO del prefab MenuPause.
+    //SudokuGameUI lo toma a través de este script (SettingsPanel) para no duplicar referencias.
+    [SerializeField] SudokuBoardController boardController;
+    [SerializeField] SudokuTimer timer;
+    [SerializeField] SudokuInputController inputController;
+    [SerializeField] SudokuBoardView boardView;
+    [SerializeField] SudokuSessionController sessionController;
+    [SerializeField] SudokuGameManager gameManager;
+    [SerializeField] SudokuGameFlowController gameFlowController;
 
-    //Estas referencias se usan principalmente en el reinicio manual de respaldo dentro de RestartGame.
-    [SerializeField] SudokuBoardController boardController;//Referencia al controlador lógico del tablero.
-    //boardController le dice al sistema de resaltado qué números hay en el tablero.
-    [SerializeField] SudokuTimer timer;//Referencia al timer del juego. timer controla el tiempo de la partida.
-    [SerializeField] SudokuInputController inputController;//Referencia al controlador de entrada del jugador.
-    //Sirve para manejar cosas como pistas y posiblemente selección/colocación de números.
-    [SerializeField] SudokuBoardView boardView;//Referencia a la vista visual del tablero.
-    //boardView se encarga de mostrar visualmente errores o limpiar errores en las celdas.
-    [SerializeField] SudokuSessionController sessionController;//Controla guardado y cambio de escena.
-    [SerializeField] SudokuGameManager gameManager;//Controla el estado general del juego.
-    [SerializeField] SudokuGameFlowController gameFlowController;//Controla flujo de partida.
-    ////por ejemplo : crear nueva partida , cargar partida , generar Sudoku , iniciar estado inicial
-    public void OpenPause()//Esta función abre el menú de pausa.
+    public GameObject SettingsPanel//Devuelve el PanelAjustes del menú de pausa (si existe).
     {
-        gameManager.PauseGame();//Pone el juego en estado Paused y detiene el timer.
-        sessionController?.SaveCurrentSlot();//Guarda la partida actual.
-        //El ?. significa: Si sessionController no es null, llama SaveCurrentSlot.
-        panel.SetActive(true);//Muestra el panel de pausa.
-        if (pauseButton != null)//si existe el boton de pausa
-            pauseButton.SetActive(false);//Oculta el botón de pausa para que no quede visible encima del panel.
+        get
+        {
+            if (settingsPanel != null && !SudokuSceneRef.IsSceneInstance(settingsPanel))
+                settingsPanel = null;//Si apunta a un asset del prefab o a algo destruido, se limpia.
+            return settingsPanel;
+        }
     }
-    public void Resume()//Esta función reanuda la partida.
+
+    void Awake()
     {
-        panel.SetActive(false);//Primero oculta el panel
-        if (pauseButton != null)//si existe el boton de pausa
-            pauseButton.SetActive(true);//muestra nuevamente el botón de pausa
-        gameManager.ResumeGame();//Cambia el estado a Playing y vuelve a iniciar el timer.
+        ResolveReferences();
     }
-    public void RestartGame()//Esta función reinicia la partida actual.
+
+    public void Setup(GameObject pausePanel, GameObject pauseButton)
+    //Reasigna las referencias del panel y botón de pausa. Lo usa SudokuGameUI al construir la UI nueva.
     {
-        if (gameFlowController != null)//Si gameFlowController existe
+        panel = pausePanel;
+        this.pauseButton = pauseButton;
+    }
+
+    void ResolveReferences()
+    {
+        boardController = SudokuSceneRef.Resolve(boardController);
+        timer = SudokuSceneRef.Resolve(timer);
+        inputController = SudokuSceneRef.Resolve(inputController);
+        boardView = SudokuSceneRef.Resolve(boardView);
+        sessionController = SudokuSceneRef.Resolve(sessionController);
+        gameManager = SudokuSceneRef.Resolve(gameManager);
+        gameFlowController = SudokuSceneRef.Resolve(gameFlowController);
+        //Si panel/pauseButton/settingsPanel apuntan a un prefab o a un objeto destruido, se limpian:
+        //SudokuGameUI se los reasigna con Setup() al construir la UI nueva.
+        panel = SudokuSceneRef.IsSceneInstance(panel) ? panel : null;
+        pauseButton = SudokuSceneRef.IsSceneInstance(pauseButton) ? pauseButton : null;
+        settingsPanel = SudokuSceneRef.IsSceneInstance(settingsPanel) ? settingsPanel : null;
+        //Resolución perezosa: si el panel/botón aún no existen (viven en un prefab que se
+        //instancia en runtime), se buscan solos en la escena por nombre.
+        if (panel == null)
+        {
+            var found = SudokuSceneRef.FindInScene<Transform>(t =>
+            {
+                string n = t.gameObject.name;
+                return n == "MenuPause" || n == "PausePanel";
+            });
+            if (found != null)
+                panel = found.gameObject;
+        }
+        if (pauseButton == null)
+        {
+            var found = SudokuSceneRef.FindInScene<Button>(b =>
+            {
+                var label = b.GetComponentInChildren<TMP_Text>(true);
+                string n = (label != null && !string.IsNullOrEmpty(label.text)) ? label.text : b.name;
+                n = n.Trim().ToLowerInvariant();
+                return n.Contains("pausa") || n.Contains("pause");
+            });
+            if (found != null)
+                pauseButton = found.gameObject;
+        }
+    }
+
+    public void ClosePause()//Cierra el panel de pausa SIN cambiar el estado del juego.
+    //Deja visible el botón de pausa ("Pause x") y oculta solo el panel superpuesto ("Panel").
+    //La usa SudokuGameUI al inicializar, para que el botón de pausa quede visible desde el inicio.
+    {
+        if (panel != null)
+            panel.SetActive(false);
+        if (pauseButton != null)
+            pauseButton.SetActive(true);
+    }
+
+    public void OpenSettings()//Abre el panel de ajustes (PanelAjustes) del menú de pausa.
+    //Es VOID para que aparezca en el Inspector (onClick) y se pueda asignar al AjustesButton.
+    {
+        ResolveReferences();
+        if (settingsPanel == null)
+            return;
+        //Se activa cubriendo la pantalla (SudokuGameUI se encarga de conectar sus botones).
+        var rt = settingsPanel.transform as RectTransform;
+        if (rt != null)
+        {
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+            rt.anchoredPosition = Vector2.zero;
+            rt.localScale = Vector3.one;
+        }
+        settingsPanel.SetActive(true);
+    }
+
+    public void CloseSettings()//Cierra el panel de ajustes (vuelve a la pausa).
+    //VOID para asignarla desde el Inspector (por ejemplo en el botón "Cerrar" del PanelAjustes).
+    {
+        ResolveReferences();
+        if (settingsPanel != null)
+            settingsPanel.SetActive(false);
+    }
+
+    public void OpenPause()
+    {
+        ResolveReferences();
+        gameManager?.PauseGame();
+        sessionController?.SaveCurrentSlot();
+        if (panel != null)
+        {
+            //Asegura que el panel cubra toda la pantalla (se posiciona encima) aunque el prefab
+            //esté posicionado a un lado o sobresaliendo del mapa.
+            var rt = panel.transform as RectTransform;
+            if (rt != null)
+            {
+                rt.anchorMin = Vector2.zero;
+                rt.anchorMax = Vector2.one;
+                rt.offsetMin = Vector2.zero;
+                rt.offsetMax = Vector2.zero;
+                rt.anchoredPosition = Vector2.zero;
+                rt.localScale = Vector3.one;
+            }
+            panel.SetActive(true);
+        }
+        if (pauseButton != null)
+            pauseButton.SetActive(false);
+    }
+
+    public void Resume()
+    {
+        if (panel != null)
+            panel.SetActive(false);
+        if (pauseButton != null)
+            pauseButton.SetActive(true);
+        gameManager?.ResumeGame();
+    }
+
+    public void RestartGame()
+    {
+        ResolveReferences();
+        if (gameFlowController != null)
         {
             gameFlowController.RestartLevel();
-            //Esa es la forma preferida, porque SudokuGameFlowController reinicia tablero, errores, pistas, timer y paneles finales.
         }
-        else
+        else if (boardController != null && boardView != null && timer != null && inputController != null)
         {
-            //Si gameFlowController no existe, usa un método de respaldo:
-            boardController.ResetBoard();//Restaura el tablero inicial.
-            var data = boardController.GetBoardData();//Obtiene los datos reiniciados.
-            boardView.UpdateBoard(//Actualiza visualmente el tablero.
-                data.values,//actualiza los valores
-                data.fixedCells,//actualiza las celdas fijas
-                data.notesMask//actualiza las notas
-            );
-            inputController.ClearSelection();//Limpia la celda seleccionada.
-            timer.ResetTime();//Reinicia el tiempo
-            timer.StartTimer();//empieza denuevo el tiempo
-            gameManager.SetGameState(SudokuGameState.Playing);//Vuelve el juego al estado Playing.
+            boardController.ResetBoard();
+            var data = boardController.GetBoardData();
+            boardView.UpdateBoard(data.values, data.fixedCells, data.notesMask, data.hintCells);
+            inputController.ClearSelection();
+            timer.ResetTime();
+            timer.StartTimer();
+            gameManager?.SetGameState(SudokuGameState.Playing);
         }
-        //Después de reiniciar:
-        panel.SetActive(false);//Cierra el panel de pausa.
-        if (pauseButton != null)//si existe el boton de pausa
-            pauseButton.SetActive(true);//Y muestra el botón de pausa
+
+        if (panel != null)
+            panel.SetActive(false);
+        if (pauseButton != null)
+            pauseButton.SetActive(true);
     }
-    public void NewGame()//Esta función inicia el flujo para crear una partida nueva.
+
+    public void NewGame()
     {
-        panel.SetActive(false);//Primero cierra el panel de pausa.
-        if (pauseButton != null)//si existe el boton de pausa
-            pauseButton.SetActive(true);//muestra el botón de pausa
-        gameFlowController?.OpenNewGamePanel();//Abre el panel de selección de dificultad.
-        //No genera directamente el Sudoku. Solo abre la UI para elegir nueva dificultad.
+        if (panel != null)
+            panel.SetActive(false);
+        if (pauseButton != null)
+            pauseButton.SetActive(true);
+        gameFlowController?.OpenNewGamePanel();
     }
-    public void GoToMenu()//Esta función vuelve al menú principal.
+
+    public void GoToMenu()
     {
-        if (sessionController != null)//Primero revisa que exista sessionController.
-            sessionController.SaveAndGoToMenu();//Eso guarda la partida actual y carga la escena del menú.
+        sessionController?.SaveAndGoToMenu();
     }
 }

@@ -25,6 +25,16 @@ public class SudokuInputController : MonoBehaviour
     void Start()//Start es una función de Unity.
         //Se ejecuta automáticamente cuando empieza la escena y el GameObject está activo.
     {
+        //Resuelve las referencias de forma robusta (se "acoplan" a las instancias reales aunque
+        //se hayan convertido en prefabs). Si apuntan a un asset o a un objeto destruido, las busca.
+        hintSystem = SudokuSceneRef.Resolve(hintSystem);
+        boardView = SudokuSceneRef.Resolve(boardView);
+        highlightSystem = SudokuSceneRef.Resolve(highlightSystem);
+        boardController = SudokuSceneRef.Resolve(boardController);
+        mistakeSystem = SudokuSceneRef.Resolve(mistakeSystem);
+        sessionContext = SudokuSceneRef.ResolveSession(sessionContext);
+        hintSystem?.Configure(sessionContext);//Vincula el contexto compartido para que las pistas usen el mismo máximo en todas las escenas.
+        mistakeSystem?.Configure(sessionContext);//Vincula el contexto compartido para que los errores usen el mismo máximo en todas las escenas.
         if (!hintsInitialized)//pregunta ¿Las pistas todavía no fueron inicializadas?
             //!hintsInitialized significa que hintsInitialized es false.
             //Esto existe porque hay dos formas de iniciar las pistas:}
@@ -56,7 +66,7 @@ public class SudokuInputController : MonoBehaviour
         //Se usa cuando empieza una partida nueva o cuando reinicias nivel.
     {
         if (hintSystem != null)//Si existe hintSystem
-            remainingHints = hintSystem.maxHints;//toma el máximo de pistas desde ahí
+            remainingHints = hintSystem.MaxHints;//toma el máximo de pistas desde ahí
         else
             remainingHints = 3;//Si hintSystem no está asignado, usa 3 como valor de emergencia.
         //fallback significa:valor de respaldo. Así el juego sigue funcionando aunque falte la referencia.
@@ -92,14 +102,14 @@ public class SudokuInputController : MonoBehaviour
         //Esto evita colocar números cuando estás en victoria, derrota, pausa o generación.
         if (selectedCell == null) return;//Si no hay una celda seleccionada, no puede colocar nada.
         //ejemplo : El jugador presionó el 5, pero no había elegido una casilla. Entonces sale.
-        int index = selectedCell.row * 9 + selectedCell.column;//Convierte fila y columna a índice lineal.
+        int index = SudokuRules.GetCellIndex(selectedCell.row, selectedCell.column);//Convierte fila y columna a índice lineal.
         //Ejemplo:
         //row = 2
         //column = 5
         //index = 2 * 9 + 5 = 23
         var data = boardController.boardData;//Obtiene los datos actuales del tablero.
         //ahi estan : values , fixedcells , notemask , solution
-        if (data.fixedCells[index]) return;//Si la celda es fija, no deja modificarla.
+        if (data.fixedCells[index] || (data.hintCells != null && data.hintCells[index])) return;//Si la celda es fija o fue colocada por pista, no deja modificarla.
         //Una celda fija puede ser: 
         //1 una pista inicial
         //2 un número bloqueado porque ya se completaron todos los de ese valor
@@ -113,6 +123,22 @@ public class SudokuInputController : MonoBehaviour
         //primero number != 0   Esto evita validar cuando el jugador quiere borrar. Si number es 0, significa borrar, no colocar.
         //luego !boardController.IsCorrect(...)    Pregunta si el número no coincide con la solución. Si el número es incorrecto, entra.
         {
+            //MODO SIN VIDAS: se coloca el número igual (sin marcar en rojo ni contar errores).
+            //Se permite escribir lo que sea; solo se gana al COMPLETAR el tablero (no avisa errores).
+            if (PlayerPrefs.GetInt("Sudoku_LivesEnabled", 1) == 0)
+            {
+                boardView.SetCellError(selectedCell.row, selectedCell.column, false);
+                var freeMove = new SudokuMove
+                {
+                    index = index,
+                    oldValue = data.values[index],
+                    newValue = number,
+                    oldNotes = data.notesMask[index],
+                    newNotes = 0
+                };
+                boardController.ApplyMove(freeMove);
+                return;
+            }
             boardView.SetCellError(selectedCell.row, selectedCell.column, true, number);//Muestra el número incorrecto en rojo en la celda.
             mistakeSystem?.RegisterMistake();//Registra un error.
             //El ?. significa: Si mistakeSystem existe, llama RegisterMistake.
@@ -180,7 +206,7 @@ public class SudokuInputController : MonoBehaviour
                 //RemoveNotes : elimina notas/candidatos.
                 // en simple Si la pista sabe qué hacer, el juego aplica esa ayuda automáticamente.
             {
-                boardController.ApplyActions(hint.actions);//ejecuta la accion correspondiente
+                boardController.ApplyActions(hint.actions, true);//ejecuta la accion correspondiente y marca la jugada como pista.
             }
         }
     }
@@ -208,10 +234,10 @@ public class SudokuInputController : MonoBehaviour
             return;//si no existe una o el otro entonces se detiene y retorna
 
         //en caso de que los elementos de datos esten pasa aca
-        for (int number = 1; number <= 9; number++)//Revisa cada número del Sudoku
+        for (int number = 1; number <= SudokuRules.MaxValue; number++)//Revisa cada número del Sudoku
         {
             bool allCorrect = true;//Asume que ese número está completo. Luego buscará si encuentra una celda donde falta.
-            for (int i = 0; i < 81; i++)//Recorre las 81 celdas del tablero.
+            for (int i = 0; i < SudokuRules.CellCount; i++)//Recorre las celdas del tablero.
             {
                 if (data.solution[i] == number && data.values[i] != number)
                 //Esta condición significa Si en la solución esta celda debería tener este número, pero actualmente no lo tiene...

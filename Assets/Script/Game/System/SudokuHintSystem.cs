@@ -1,4 +1,3 @@
-using NUnit.Framework;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -9,14 +8,26 @@ public class SudokuHintSystem : MonoBehaviour//Este script se encarga de entrega
     [SerializeField] SudokuBoardController boardController;//Referencia al controlador del tablero.
     //Se usa para leer: boardController.boardData.  De ahí toma: data.values , data.fixedCells , data.solution
     //en simple : boardController le da al hint system el estado actual del Sudoku y la solución.
-    [SerializeField] public int maxHints = 3;//Cantidad máxima de pistas disponibles.
-    //Está en SudokuHintSystem, pero quien realmente usa este valor es SudokuInputController,
-    //en ResetHints: remainingHints = hintSystem.maxHints;
+    [SerializeField] SessionContext sessionContext;//Contexto compartido entre escenas.
+    [SerializeField] int maxHints = 3;//Valor de respaldo si no hay SessionContext.
+    public int MaxHints => sessionContext != null ? sessionContext.MaxHints : maxHints;
+    public void Configure(SessionContext context)
+    {
+        sessionContext = context;
+    }
+    void ResolveRefs()//Se "acopla" a las instancias reales de la escena si las referencias están vacías.
+    {
+        if (boardController == null || !SudokuSceneRef.IsSceneInstance(boardController))
+            boardController = SudokuSceneRef.Resolve(boardController);
+        if (sessionContext == null)
+            sessionContext = SudokuSceneRef.ResolveSession(sessionContext);
+    }
     public bool TryGetHint(out SudokuHint hint)//Esta es la función principal. Intenta crear una pista.
         //devuelve true : si logró crear una pista.
         //devuelve false : si no pudo.
         //También devuelve por out: SudokuHint hint : La pista creada.
     {
+        ResolveRefs();//Asegura que boardController apunte a la instancia real de la escena.
         if (boardController == null)//Si no hay boardController, el script no puede leer el tablero.
         {
             //Entonces muestra error, 
@@ -36,7 +47,7 @@ public class SudokuHintSystem : MonoBehaviour//Este script se encarga de entrega
         //si pasa las anteriores validacion pasa aca:
         //aqui verifica que la celda existe y este vacia
         List<int> emptyCells = new List<int>();//Crea una lista donde guardará los índices de celdas vacías.
-        for (int i = 0; i < 81; i++)//Recorre las 81 celdas del Sudoku.
+        for (int i = 0; i < SudokuRules.CellCount; i++)//Recorre las celdas del Sudoku.
         {
             if (data.values[i] == 0 && !data.fixedCells[i])
             //primera validacion data.values[i] == 0 : La celda está vacía.

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 public class XWingTechnique : ISudokuTechnique//XWingTechnique busca la técnica XWing.
 //Si un candidato aparece exactamente en las mismas 2 columnas dentro de 2 filas diferentes,
 //entonces ese candidato queda “encerrado” en esas 4 esquinas. Por eso se puede eliminar ese candidato de las demás celdas de esas columnas.
@@ -17,7 +17,7 @@ public class XWingTechnique : ISudokuTechnique//XWingTechnique busca la técnica
         //Recibe: SudokuContext ctx El estado actual del Sudoku
         //Devuelve por out: SudokuHint hint Si encuentra un X-Wing, aquí coloca la pista.
     {
-        for (int num = 1; num <= 9; num++)//Recorre los números del Sudoku 1, 2, 3, 4, 5, 6, 7, 8, 9
+        for (int num = 1; num <= SudokuRules.MaxValue; num++)//Recorre los números del Sudoku
             //X-Wing se busca candidato por candidato.
             //Primero pregunta:
             //¿Hay X-Wing con el número 1?
@@ -56,7 +56,7 @@ public class XWingTechnique : ISudokuTechnique//XWingTechnique busca la técnica
         //O sea : En esta fila, el candidato aparece exactamente en estas dos columnas.
         //ejemplo (row: 1, c1: 2, c2: 6)
         //Significa: En la fila 1, este candidato aparece solo en las columnas 2 y 6.
-        for (int row = 0; row < 9; row++)//Luego recorre todas las filas
+        for (int row = 0; row < SudokuRules.Size; row++)//Luego recorre todas las filas
         {
             var cols = GetCandidateColsInRow(ctx, row, mask);//Esta función auxiliar devuelve las columnas de esa fila donde aparece el candidato.
             //Ejemplo : Si está buscando candidato 5, y en la fila 3 el 5 aparece como nota en columnas 1 y 7: cols = [1, 7]
@@ -108,7 +108,7 @@ public class XWingTechnique : ISudokuTechnique//XWingTechnique busca la técnica
                     continue;
 
                 List<int> affected = new();//Crea una lista para guardar celdas donde se podrá eliminar ese candidato.
-                for (int r = 0; r < 9; r++)//Recorre todas las filas del tablero.
+                for (int r = 0; r < SudokuRules.Size; r++)//Recorre todas las filas del tablero.
                     //¿Por qué? Porque si X-Wing está en dos columnas, se eliminan candidatos en esas columnas, pero en otras filas.
                 {
                     if (r == a.row || r == b.row)//Salta las dos filas que forman el X-Wing.
@@ -116,8 +116,8 @@ public class XWingTechnique : ISudokuTechnique//XWingTechnique busca la técnica
                         //Solo se eliminan de otras filas en las mismas columnas.
                         continue;
 
-                    int idx1 = r * 9 + a.c1;//Calcula las dos celdas de esa fila en las columnas del X-Wing.
-                    int idx2 = r * 9 + a.c2;//Calcula las dos celdas de esa fila en las columnas del X-Wing.
+                    int idx1 = SudokuRules.GetCellIndex(r, a.c1);//Calcula las dos celdas de esa fila en las columnas del X-Wing.
+                    int idx2 = SudokuRules.GetCellIndex(r, a.c2);//Calcula las dos celdas de esa fila en las columnas del X-Wing.
                     //Ejemplo:
                     //Si las columnas del X-Wing son:
                     //a.c1 = 2
@@ -149,10 +149,10 @@ public class XWingTechnique : ISudokuTechnique//XWingTechnique busca la técnica
                 hint = BuildHint(mask, new[]//Si hay celdas afectadas, crea el hint:Aquí manda a construir la pista.
                 {
                     //El segundo parámetro son las 4 esquinas del X-Wing:
-                    a.row * 9 + a.c1,
-                    a.row * 9 + a.c2,
-                    b.row * 9 + b.c1,
-                    b.row * 9 + b.c2
+                    SudokuRules.GetCellIndex(a.row, a.c1),
+                    SudokuRules.GetCellIndex(a.row, a.c2),
+                    SudokuRules.GetCellIndex(b.row, b.c1),
+                    SudokuRules.GetCellIndex(b.row, b.c2)
                 }, affected);//affected son las celdas donde se eliminará el candidato.
                 //ejemplo
                 //a.row = 1
@@ -181,7 +181,7 @@ public class XWingTechnique : ISudokuTechnique//XWingTechnique busca la técnica
         var colRows = new List<(int col, int r1, int r2)>();//Crea una lista de tuplas.
         //Cada elemento guarda: col , r1 , r2
         //Eso significa: En esta columna, el candidato aparece exactamente en estas dos filas.
-        for (int col = 0; col < 9; col++)//Recorre las columnas del tablero:
+        for (int col = 0; col < SudokuRules.Size; col++)//Recorre las columnas del tablero:
         {
             var rows = GetCandidateRowsInCol(ctx, col, mask);//Esta función busca en qué filas de esa columna aparece el candidato.
             //Ejemplo:Si estamos buscando el candidato 5, y en la columna 2 el 5 aparece en filas 1 y 6: rows = [1, 6]
@@ -225,7 +225,7 @@ public class XWingTechnique : ISudokuTechnique//XWingTechnique busca la técnica
                     continue;
 
                 List<int> affected = new();//Crea una lista para guardar las celdas donde se puede eliminar el candidato.
-                for (int c = 0; c < 9; c++)//Recorre todas las columnas del tablero.
+                for (int c = 0; c < SudokuRules.Size; c++)//Recorre todas las columnas del tablero.
                     //¿Por qué columnas? Porque en el X-Wing basado en columnas,
                     //se eliminan candidatos en las filas r1 y r2, recorriendo las demás columnas.
                 {
@@ -234,8 +234,8 @@ public class XWingTechnique : ISudokuTechnique//XWingTechnique busca la técnica
                         //Queremos borrar el candidato en las mismas filas, pero fuera de esas columnas.
                         continue;
 
-                    int idx1 = a.r1 * 9 + c;//Calcula los índices de dos celdas
-                    int idx2 = a.r2 * 9 + c;//Calcula los índices de dos celdas
+                    int idx1 = SudokuRules.GetCellIndex(a.r1, c);//Calcula los índices de dos celdas
+                    int idx2 = SudokuRules.GetCellIndex(a.r2, c);//Calcula los índices de dos celdas
                     //ejemplo
                     //a.r1 = 1
                     //a.r2 = 6
@@ -260,10 +260,10 @@ public class XWingTechnique : ISudokuTechnique//XWingTechnique busca la técnica
                 hint = BuildHint(mask, new[]//Si sí encontró celdas afectadas:Construye el SudokuHint. 
                 //El arreglo new[] { ... } contiene las 4 esquinas del X-Wing.
                 {
-                    a.r1 * 9 + a.col,
-                    a.r2 * 9 + a.col,
-                    b.r1 * 9 + b.col,
-                    b.r2 * 9 + b.col
+                    SudokuRules.GetCellIndex(a.r1, a.col),
+                    SudokuRules.GetCellIndex(a.r2, a.col),
+                    SudokuRules.GetCellIndex(b.r1, b.col),
+                    SudokuRules.GetCellIndex(b.r2, b.col)
                 }, affected);//affected son las celdas donde se eliminará el candidato.
                 //Primera columna:
                 //a.r1 * 9 + a.col
@@ -294,13 +294,13 @@ public class XWingTechnique : ISudokuTechnique//XWingTechnique busca la técnica
         //devuelve una list<int> : Una lista de columnas donde aparece ese candidato.
     {
         List<int> cols = new();//Crea una lista vacía.Aquí se guardarán las columnas encontradas.
-        for (int col = 0; col < 9; col++)//Recorre todas las columnas de esa fila.
+        for (int col = 0; col < SudokuRules.Size; col++)//Recorre todas las columnas de esa fila.
         {
             if (ctx.board[row, col] != 0)//Si la celda ya tiene número, la salta.
                 //Solo interesan celdas vacías, porque solo las celdas vacías tienen candidatos.
                 continue;
 
-            int index = row * 9 + col;//Convierte fila y columna a índice lineal.
+            int index = SudokuRules.GetCellIndex(row, col);//Convierte fila y columna a índice lineal.
             //ejemplo:
             //row = 3
             //col = 6
@@ -326,13 +326,13 @@ public class XWingTechnique : ISudokuTechnique//XWingTechnique busca la técnica
         //devuelve una list<int> : Una lista de columnas donde aparece ese candidato.
     {
         List<int> rows = new();//Crea una lista vacía donde se guardarán las filas encontradas.
-        for (int row = 0; row < 9; row++)//Recorre todas las filas de esa columna.
+        for (int row = 0; row < SudokuRules.Size; row++)//Recorre todas las filas de esa columna.
         {
             if (ctx.board[row, col] != 0)//Revisa si la celda ya tiene número.
                 //Si la celda ya está ocupada, no puede tener candidatos, así que la salta.
                 continue;
 
-            int index = row * 9 + col;//Convierte fila y columna a índice lineal.
+            int index = SudokuRules.GetCellIndex(row, col);//Convierte fila y columna a índice lineal.
             //ejemplo:
             //row = 5
             //col = 4

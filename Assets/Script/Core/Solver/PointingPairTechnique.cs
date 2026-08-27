@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 public class PointingPairTechnique : ISudokuTechnique//PointingPairTechnique busca la técnica Pointing Pair.
     //Si dentro de una caja 3x3 un número candidato solo aparece en una misma fila o una misma columna,
     //entonces ese número no puede aparecer fuera de esa caja en esa misma fila/columna.
@@ -16,18 +16,16 @@ public class PointingPairTechnique : ISudokuTechnique//PointingPairTechnique bus
     {
         var notesMask = ctx.notesMask;//Guarda una referencia corta a las notas.
         //Así en vez de escribir: ctx.notesMask[index] escribes notesMask[index]
-        for (int box = 0; box < 9; box++)//Recorre las 9 cajas 3x3 del Sudoku.
+        for (int box = 0; box < SudokuRules.TotalBoxCount; box++)//Recorre las cajas del Sudoku.
             //Las cajas se numeran así:
             //0 1 2
             //3 4 5
             //6 7 8
         {
-            //Calcula dónde empieza la caja.
-            //ejemplo con box 4
-            int startRow = (box / 3) * 3;//int startRow = (box / 3) * 3; seria startRow = (4 / 3) * 3 y luego 1 * 3 = 3 que seria la fila
-            int startCol = (box % 3) * 3;//int startCol = (box % 3) * 3; seria startCol = (4 / 3) * 3 y 4/3 es 1 y el sobrante es 1 entocnes 1 * 3 = 3 que seria la columna
+            int startRow = (box / SudokuRules.BoxRows) * SudokuRules.BoxRows;
+            int startCol = (box % SudokuRules.BoxRows) * SudokuRules.BoxCols;
             //entonces empieza la caja en la fila 3 y en la columna 3
-            for (int num = 1; num <= 9; num++)//Dentro de cada caja, revisa cada número del 1 al 9.
+            for (int num = 1; num <= SudokuRules.MaxValue; num++)//Dentro de cada caja, revisa cada número posible.
                 //pregunta ¿Dónde aparece este número como candidato dentro de esta caja?
             {
                 int mask = 1 << (num - 1);//Convierte el número en un bit.
@@ -39,10 +37,9 @@ public class PointingPairTechnique : ISudokuTechnique//PointingPairTechnique bus
                 List<int> positions = new();//Crea una lista para guardar las celdas de la caja donde aparece ese candidato.
                 //ejemplo positions = [3, 5] significa que el candidato aparece en esas celdas.
 
-                //Ahora recorre las 9 celdas internas de la caja:
-                for (int r = 0; r < 3; r++)//primero recorre las filas internas de la caja 3x3
+                for (int r = 0; r < SudokuRules.BoxRows; r++)//primero recorre las filas internas de la caja
                 {
-                    for (int c = 0; c < 3; c++)//luego recorre las columnas internas de la caja 3x3
+                    for (int c = 0; c < SudokuRules.BoxCols; c++)//luego recorre las columnas internas de la caja
                     {
                         //ejemplo si el startRow es fila 3 y el startCol es columna 3
                         int rr = startRow + r;//Convierte esa posición interna a fila real del tablero.
@@ -53,7 +50,7 @@ public class PointingPairTechnique : ISudokuTechnique//PointingPairTechnique bus
                         //ejemplo int cc = 3 + 0 = 3
                         //ejemplo int cc = 3 + 1 = 4
                         //ejemplo int cc = 3 + 2 = 5
-                        int index = rr * 9 + cc;//Convierte fila/columna a índice lineal.
+                        int index = SudokuRules.GetCellIndex(rr, cc);//Convierte fila/columna a índice lineal.
                         //ejemplo con las 9 celdas
                         //int index = rr * 9 + cc luego index = 3 * 9 + 3 entonces index = 3 * 9 = 27 + 3 = 30
                         //int index = rr * 9 + cc luego index = 3 * 9 + 4 entonces index = 3 * 9 = 27 + 4 = 31
@@ -75,12 +72,10 @@ public class PointingPairTechnique : ISudokuTechnique//PointingPairTechnique bus
                 }
                 if (positions.Count < 2) continue;//Si el candidato aparece en menos de 2 posiciones dentro de la caja, no aplica esta técnica.
                 //Para Pointing Pair normalmente se busca que el candidato esté limitado a dos o más posiciones alineadas.
-                int baseRow = positions[0] / 9;//convierte índice a fila.Toma la fila de la primera posición encontrada.
-                //ejemplo positions[0] = 30
-                //entonces baseRow = 30 / 9 = 3
+                int baseRow = SudokuRules.GetRow(positions[0]);//convierte índice a fila.Toma la fila de la primera posición encontrada.
                 bool sameRow = true;//Luego asume inicialmente
                 foreach (var idx in positions)//Recorre todas las posiciones.
-                    if (idx / 9 != baseRow)//Si alguna está en una fila distinta,entonces no están todas en la misma fila
+                    if (SudokuRules.GetRow(idx) != baseRow)//Si alguna está en una fila distinta,entonces no están todas en la misma fila
                         sameRow = false;//y retorna false
                         //ejemplo valido -- positions = [27, 28, 29] Todas están en fila 3.
                         //27 / 9 = 3
@@ -97,9 +92,9 @@ public class PointingPairTechnique : ISudokuTechnique//PointingPairTechnique bus
                             //entonces se puede eliminar ese candidato de otras celdas de esa fila fuera de la caja.
                 {
                     List<int> affected = new();//Crea una lista para guardar las celdas afectadas, o sea, las celdas donde se borrará ese candidato.
-                    for (int c = 0; c < 9; c++)//Recorre toda la fila baseRow, columna por columna.
+                    for (int c = 0; c < SudokuRules.Size; c++)//Recorre toda la fila baseRow, columna por columna.
                     {
-                        int index = baseRow * 9 + c;//Convierte esa celda de la fila a índice lineal.
+                        int index = SudokuRules.GetCellIndex(baseRow, c);//Convierte esa celda de la fila a índice lineal.
                         //ejemplo si baseRow = 3 y c = 6
                         //entonces index = 3 * 9 + 6 = 33
                         if (IsInsideBox(index, box)) continue;//Si la celda está dentro de la misma caja, la salta.
@@ -122,12 +117,10 @@ public class PointingPairTechnique : ISudokuTechnique//PointingPairTechnique bus
                     }
                 }
                 //Si no encontró eliminación por fila, revisa columnas:
-                int baseCol = positions[0] % 9;//convierte índice a columna
-                //ejemplo positions[0] = 32
-                //baseCol = 32 % 9 = 5
+                int baseCol = SudokuRules.GetCol(positions[0]);//convierte índice a columna
                 bool sameCol = true;//Luego asume inicialmente
                 foreach (var idx in positions)//Comprueba si todas las posiciones están en esa columna
-                    if (idx % 9 != baseCol)
+                    if (SudokuRules.GetCol(idx) != baseCol)
                         //ejemplo valido
                         //positions = [5, 14, 23]
                         //entonces se verifica
@@ -145,9 +138,9 @@ public class PointingPairTechnique : ISudokuTechnique//PointingPairTechnique bus
                 if (sameCol)//pregunta ¿Si todas están en la misma columna:entonces se puede eliminar ese candidato fuera de la caja, pero en esa columna.
                 {
                     List<int> affected = new();//Crea lista de afectadas
-                    for (int r = 0; r < 9; r++)//Recorre toda la columna
+                    for (int r = 0; r < SudokuRules.Size; r++)//Recorre toda la columna
                     {
-                        int index = r * 9 + baseCol;//Calcula el índice
+                        int index = SudokuRules.GetCellIndex(r, baseCol);//Calcula el índice
                         //ejemplo si r = 7 y baseCol es 5
                         //index = 7 * 9 + 5 = 68
                         if (IsInsideBox(index, box)) continue;//No se eliminan candidatos dentro de la caja que está justificando la técnica.
@@ -218,21 +211,13 @@ public class PointingPairTechnique : ISudokuTechnique//PointingPairTechnique bus
     {
         //si index es 41
         //si box es 4
-        int r = index / 9;//Primero convierte el índice a fila
-        //int r = 41 / 9 = 4
-        int c = index % 9;//Luego convierte el índice a columna
+        int r = SudokuRules.GetRow(index);//Primero convierte el índice a fila
+        int c = SudokuRules.GetCol(index);//Luego convierte el índice a columna
         //int c = 41 % 9 = 5 que es el sobrante ya que de 9 para llegar a 41 son 4 y el sobrante son 5 es decir 9 * 5 = 36 y 41 - 36 = 5
         //entonces index 41 = fila 4, columna 5
-        int br = (box / 3) * 3;//Calcula fila inicial
-        //int br = (4 / 3) * 3 que es br = 1 * 3 = 3
-        int bc = (box % 3) * 3;//Calcula columna inicial
-        //int br = (4 % 3) * 3 que es bc = 1 * 3 = 3 ya que es la division de 4 / 3 es 1 y 4 - 3 es 1 para luego sacar el 1 * 3 que son 3
-        //entonces la caja 4 empieza en fila 3, columna 3
-        //y cubre
-        //[3,3] [3,4] [3,5]
-        //[4,3] [4,4] [4,5]
-        //[5,3] [5,4] [5,5]
-        return r >= br && r < br + 3 && c >= bc && c < bc + 3;//La última línea decide si está dentro. Esto revisa cuatro condiciones
+        int br = (box / SudokuRules.BoxRows) * SudokuRules.BoxRows;//Calcula fila inicial
+        int bc = (box % SudokuRules.BoxRows) * SudokuRules.BoxCols;//Calcula columna inicial
+        return r >= br && r < br + SudokuRules.BoxRows && c >= bc && c < bc + SudokuRules.BoxCols;//La última línea decide si está dentro. Esto revisa cuatro condiciones
         //primero r >= br : La fila de la celda está desde la fila inicial de la caja hacia abajo.
         //segundo r < br + 3 : La fila no se pasa de las 3 filas de la caja.
         //tercero c >= bc : La columna está desde la columna inicial de la caja hacia la derecha.

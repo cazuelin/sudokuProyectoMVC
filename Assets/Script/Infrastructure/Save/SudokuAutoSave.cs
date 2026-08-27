@@ -17,6 +17,9 @@ public class SudokuAutoSave : MonoBehaviour//Este script se encarga de hacer gua
     //Si dirty es false, no hay nada pendiente.
     void Start()//Start se ejecuta cuando inicia la escena.
     {
+        //Resuelve las referencias de forma robusta (se "acoplan" a las instancias reales).
+        board = SudokuSceneRef.Resolve(board);
+        sessionContext = SudokuSceneRef.ResolveSession(sessionContext);
         board.OnBoardChanged += MarkDirty;//Aquí el script se suscribe al evento del tablero: board.OnBoardChanged += MarkDirty;
         //eso significa Cuando el tablero cambie, llama a MarkDirty.
         //Ejemplo: el jugador coloca un número, borra una nota, usa undo, etc.
@@ -51,6 +54,11 @@ public class SudokuAutoSave : MonoBehaviour//Este script se encarga de hacer gua
     }
     void Save()//Esta función hace el guardado real.
     {
+        //Resolución perezosa: si el Start no alcanzó a resolver, se resuelve aquí para no fallar.
+        saveManager = SudokuSceneRef.Resolve(saveManager);
+        sessionContext = SudokuSceneRef.ResolveSession(sessionContext);
+        if (saveManager == null || sessionContext == null)
+            return;//Sin sistema de guardado o sin sesión no se puede guardar.
         int slot = sessionContext.SelectedSlot;//Obtiene el slot actual.
         if (slot < 0) return;//Si el slot es inválido, se detiene.
         //Un slot negativo, como -1, significa: No hay slot seleccionado.

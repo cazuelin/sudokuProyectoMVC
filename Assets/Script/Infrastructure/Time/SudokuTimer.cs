@@ -30,6 +30,10 @@ public class SudokuTimer : MonoBehaviour//Este script controla el tiempo de la p
     }
     void UpdateTimerText()//Esta función convierte segundos a formato minutos/segundos.
     {
+        if (timerText == null)
+            EnsureTimerText();//Intenta encontrarlo solo en los prefabs instanciados (DatosNivel).
+        if (timerText == null)//Si todavía no existe, no hace nada.
+            return;
         int totalSeconds = Mathf.FloorToInt(timeElapsed);//Toma el tiempo total como entero.
         //Ejemplo: timeElapsed = 125.8f.  lo pasa a totalSeconds = 125
         int minutes = totalSeconds / 60;//Calcula los minutos.
@@ -50,6 +54,19 @@ public class SudokuTimer : MonoBehaviour//Este script controla el tiempo de la p
     {
         timeElapsed = time;//Guarda el tiempo cargado.
         UpdateTimerText();//Actualiza el texto para mostrar ese tiempo en pantalla.
+    }
+    public void SetTimerText(TMP_Text text)//Reasigna el texto del timer. Lo usa SudokuGameUI al construir la UI nueva.
+    {
+        timerText = text;
+        UpdateTimerText();
+    }
+    void EnsureTimerText()//Busca el texto del timer en los prefabs instanciados (por nombre "Timer*").
+    {
+        timerText = SudokuSceneRef.FindInScene<TMP_Text>(t =>
+        {
+            string n = t.gameObject.name.ToLowerInvariant();
+            return n.Contains("timer");
+        });
     }
     public void ResetTime()//Reinicia el timer.
     {

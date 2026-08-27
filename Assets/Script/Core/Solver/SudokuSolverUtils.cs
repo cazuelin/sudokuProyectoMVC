@@ -26,7 +26,7 @@ public static class SudokuSolverUtils
     public static int GetSingleValue(int mask)//Esta función recibe un mask y devuelve el primer número encontrado dentro de ese mask.
         //Por ejemplo, si el mask tiene activo solo el candidato 5: 000010000 entonces devuelve 5
     {
-        for (int i = 0; i < 9; i++)//Recorre los 9 posibles candidatos. Pero aquí i va de 0 a 8, porque los bits empiezan en posición 0.
+        for (int i = 0; i < SudokuRules.MaxValue; i++)//Recorre los posibles candidatos. Aquí i va desde 0, porque los bits empiezan en la posición 0.
             if ((mask & (1 << i)) != 0)//Esto revisa si el bit i está encendido.
                 //Ejemplo con i = 4:  1 << 4   Eso crea este bit:  000010000.  Después lo compara con el mask usando &.
                 //Si el resultado no es cero, significa: Este candidato existe en el mask.
@@ -42,66 +42,31 @@ public static class SudokuSolverUtils
         //La fórmula para convertir fila/columna a índice es:
         //index = row * 9 + col;
     {
-        int[] unit = new int[9];//Crea un arreglo de 9 posiciones.
-        for (int c = 0; c < 9; c++)//Recorre las columnas de esa fila.
-            unit[c] = row * 9 + c;//Guarda cada índice de esa fila.
+        int[] unit = new int[SudokuRules.Size];//Crea un arreglo de posiciones.
+        for (int c = 0; c < SudokuRules.Size; c++)//Recorre las columnas de esa fila.
+            unit[c] = row * SudokuRules.Size + c;//Guarda cada índice de esa fila.
         //ejemplo si llamas a GetRowUnit(1) = devuelve [9, 10, 11, 12, 13, 14, 15, 16, 17]
         return unit;//retorna todos los valores almacenados en el arreglo
     }
 
     public static int[] GetColUnit(int col)//Esta función devuelve las 9 posiciones de una columna.
     {
-        int[] unit = new int[9];//Crea un arreglo de 9 índices.
-        for (int r = 0; r < 9; r++)//Recorre las filas.
-            unit[r] = r * 9 + col;//Convierte cada posición de esa columna a índice lineal.
+        int[] unit = new int[SudokuRules.Size];//Crea un arreglo de índices.
+        for (int r = 0; r < SudokuRules.Size; r++)//Recorre las filas.
+            unit[r] = r * SudokuRules.Size + col;//Convierte cada posición de esa columna a índice lineal.
         //ejemplo si llamas a GetColUnit(0) = devuelve [0, 9, 18, 27, 36, 45, 54, 63, 72] Eso representa la primera columna completa.
         return unit;//y retorna todos los valores almacenados en el arreglo
     }
 
-    public static int[] GetBoxUnit(int box)//Esta función devuelve las 9 posiciones de una caja 3x3.
-        //Las cajas del Sudoku se pueden numerar así:
-        // 0 1 2
-        // 3 4 5
-        // 6 7 8
+    public static int[] GetBoxUnit(int box)
     {
-        int[] unit = new int[9];//Crea un arreglo para guardar las 9 celdas de la caja.
-        int startRow = (box / 3) * 3;//Calcula en qué fila empieza esa caja.
-        //ejemplo si box = 4
-        // (box / 3) * 3
-        // (4 / 3) * 3
-        // 1 * 3 = 3
-        //entonces la caja 4 empieza en la fila 3
-        int startCol = (box % 3) * 3;//Calcula en qué columna empieza. % es módulo, devuelve el resto de una división.
-        //ejemplo si box = 4
-        //(box % 3) * 3
-        //(4 / 3) * 3
-        //si 3 cae 1 vez en 4 entonces seria 1 pero es el resto de la division entonces seria 4 - 3 = 1
-        //1 * 3 = 3
-        //Entonces la caja 4 empieza en la columna 3.
-        //La caja 4 es la del centro:
-        //filas     3, 4, 5
-        //columnas  3, 4, 5
-        int k = 0;//k es el índice donde se irá guardando dentro del arreglo unit.
-        for (int r = 0; r < 3; r++)//Recorre las 3 filas internas de esa caja.
-            for (int c = 0; c < 3; c++)//Recorre las 3 columnas internas de esa caja.
-                unit[k++] = (startRow + r) * 9 + (startCol + c);//Esta línea guarda el índice lineal de cada celda.
-        //k++ significa:Usa el valor actual de k, y después súmale 1.
-        //ejemplo con caja 0 
-        //startRow = 0
-        //startCol = 0
-        //[0, 1, 2, 9, 10, 11, 18, 19, 20]
-        //unit[k++] = (startRow + r) * 9 + (startCol + c);
-        //1 = (0 + 0) * 9 + (0 + 0); = 0 * 9 + 0 = 0 * 9 = 0 + 0 = 0
-        //2 = (0 + 0) * 9 + (0 + 1); = 0 * 9 + 1 = 0 * 9 = 0 + 1 = 1
-        //3 = (0 + 0) * 9 + (0 + 2); = 0 * 9 + 2 = 0 * 9 = 0 + 2 = 2
-
-        //4 = (0 + 1) * 9 + (0 + 0); = 1 * 9 + 0 = 1 * 9 = 9 + 0 = 9
-        //5 = (0 + 1) * 9 + (0 + 1); = 1 * 9 + 1 = 1 * 9 = 9 + 1 = 10
-        //6 = (0 + 1) * 9 + (0 + 2); = 1 * 9 + 1 = 1 * 9 = 9 + 2 = 11
-
-        //7 = (0 + 2) * 9 + (0 + 0); = 2 * 9 + 0 = 2 * 9 = 18 + 0 = 18
-        //8 = (0 + 2) * 9 + (0 + 1); = 2 * 9 + 1 = 2 * 9 = 18 + 1 = 19
-        //9 = (0 + 2) * 9 + (0 + 2); = 2 * 9 + 2 = 2 * 9 = 18 + 2 = 20
-        return unit;//Devuelve las 9 posiciones de esa caja.
+        int[] unit = new int[SudokuRules.Size];
+        int startRow = (box / SudokuRules.BoxRows) * SudokuRules.BoxRows;
+        int startCol = (box % SudokuRules.BoxRows) * SudokuRules.BoxCols;
+        int k = 0;
+        for (int r = 0; r < SudokuRules.BoxRows; r++)
+            for (int c = 0; c < SudokuRules.BoxCols; c++)
+                unit[k++] = (startRow + r) * SudokuRules.Size + (startCol + c);
+        return unit;
     }
 }

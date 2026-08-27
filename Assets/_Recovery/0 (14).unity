@@ -180,7 +180,7 @@ MonoBehaviour:
   m_CellSize: {x: 110, y: 130}
   m_Spacing: {x: 2, y: 2}
   m_Constraint: 1
-  m_ConstraintCount: 3
+  m_ConstraintCount: 5
 --- !u!114 &84188822
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1205,7 +1205,7 @@ MonoBehaviour:
   m_CellSize: {x: 110, y: 130}
   m_Spacing: {x: 2, y: 2}
   m_Constraint: 1
-  m_ConstraintCount: 3
+  m_ConstraintCount: 5
 --- !u!114 &186275501
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1305,7 +1305,7 @@ MonoBehaviour:
   m_CellSize: {x: 110, y: 130}
   m_Spacing: {x: 2, y: 2}
   m_Constraint: 1
-  m_ConstraintCount: 3
+  m_ConstraintCount: 5
 --- !u!114 &188650619
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1838,7 +1838,7 @@ MonoBehaviour:
   m_CellSize: {x: 110, y: 130}
   m_Spacing: {x: 2, y: 2}
   m_Constraint: 1
-  m_ConstraintCount: 3
+  m_ConstraintCount: 5
 --- !u!114 &229921271
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2180,6 +2180,7 @@ MonoBehaviour:
   boardView: {fileID: 637565695}
   timer: {fileID: 1045420959}
   boardController: {fileID: 978332227}
+  variant: 5
   flowController: {fileID: 1890049367}
   highlightSystem: {fileID: 162226598}
   gameState: 0
@@ -2738,7 +2739,7 @@ MonoBehaviour:
   m_CellSize: {x: 110, y: 130}
   m_Spacing: {x: 2, y: 2}
   m_Constraint: 1
-  m_ConstraintCount: 3
+  m_ConstraintCount: 5
 --- !u!114 &474984457
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2838,7 +2839,7 @@ MonoBehaviour:
   m_CellSize: {x: 110, y: 130}
   m_Spacing: {x: 2, y: 2}
   m_Constraint: 1
-  m_ConstraintCount: 3
+  m_ConstraintCount: 5
 --- !u!114 &530720958
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3146,7 +3147,7 @@ MonoBehaviour:
   m_CellSize: {x: 110, y: 130}
   m_Spacing: {x: 2, y: 2}
   m_Constraint: 1
-  m_ConstraintCount: 3
+  m_ConstraintCount: 5
 --- !u!114 &568834947
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3608,6 +3609,22 @@ MonoBehaviour:
   - {fileID: 1158407902}
   - {fileID: 750204449}
   - {fileID: 1637862884}
+  - {fileID: 84188820}
+  - {fileID: 530720956}
+  - {fileID: 738153973}
+  - {fileID: 1403209701}
+  - {fileID: 829337030}
+  - {fileID: 1345316615}
+  - {fileID: 186275499}
+  - {fileID: 474984455}
+  - {fileID: 229921269}
+  - {fileID: 568834945}
+  - {fileID: 939055013}
+  - {fileID: 1774502749}
+  - {fileID: 782848024}
+  - {fileID: 855807815}
+  - {fileID: 1650781372}
+  - {fileID: 1053764771}
 --- !u!1 &637662679
 GameObject:
   m_ObjectHideFlags: 0
@@ -3989,7 +4006,7 @@ MonoBehaviour:
   m_CellSize: {x: 110, y: 130}
   m_Spacing: {x: 2, y: 2}
   m_Constraint: 1
-  m_ConstraintCount: 3
+  m_ConstraintCount: 5
 --- !u!114 &738153975
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4089,7 +4106,7 @@ MonoBehaviour:
   m_CellSize: {x: 110, y: 130}
   m_Spacing: {x: 2, y: 2}
   m_Constraint: 1
-  m_ConstraintCount: 3
+  m_ConstraintCount: 5
 --- !u!114 &750204451
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4189,7 +4206,7 @@ MonoBehaviour:
   m_CellSize: {x: 110, y: 130}
   m_Spacing: {x: 2, y: 2}
   m_Constraint: 1
-  m_ConstraintCount: 3
+  m_ConstraintCount: 5
 --- !u!114 &782848026
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4634,7 +4651,7 @@ MonoBehaviour:
   m_CellSize: {x: 110, y: 130}
   m_Spacing: {x: 2, y: 2}
   m_Constraint: 1
-  m_ConstraintCount: 3
+  m_ConstraintCount: 5
 --- !u!114 &829337032
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4779,7 +4796,7 @@ MonoBehaviour:
   m_CellSize: {x: 110, y: 130}
   m_Spacing: {x: 2, y: 2}
   m_Constraint: 1
-  m_ConstraintCount: 3
+  m_ConstraintCount: 5
 --- !u!114 &855807817
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5192,7 +5209,7 @@ MonoBehaviour:
   m_CellSize: {x: 110, y: 130}
   m_Spacing: {x: 2, y: 2}
   m_Constraint: 1
-  m_ConstraintCount: 3
+  m_ConstraintCount: 5
 --- !u!114 &939055015
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5804,7 +5821,7 @@ MonoBehaviour:
   m_CellSize: {x: 110, y: 130}
   m_Spacing: {x: 2, y: 2}
   m_Constraint: 1
-  m_ConstraintCount: 3
+  m_ConstraintCount: 5
 --- !u!114 &1053764773
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6665,7 +6682,7 @@ MonoBehaviour:
   m_CellSize: {x: 110, y: 130}
   m_Spacing: {x: 2, y: 2}
   m_Constraint: 1
-  m_ConstraintCount: 3
+  m_ConstraintCount: 5
 --- !u!114 &1158407904
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8016,7 +8033,7 @@ MonoBehaviour:
   m_CellSize: {x: 110, y: 130}
   m_Spacing: {x: 2, y: 2}
   m_Constraint: 1
-  m_ConstraintCount: 3
+  m_ConstraintCount: 5
 --- !u!114 &1345316617
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8253,7 +8270,7 @@ MonoBehaviour:
   m_CellSize: {x: 110, y: 130}
   m_Spacing: {x: 2, y: 2}
   m_Constraint: 1
-  m_ConstraintCount: 3
+  m_ConstraintCount: 5
 --- !u!114 &1403209703
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9765,7 +9782,7 @@ MonoBehaviour:
   m_CellSize: {x: 110, y: 130}
   m_Spacing: {x: 2, y: 2}
   m_Constraint: 1
-  m_ConstraintCount: 3
+  m_ConstraintCount: 5
 --- !u!114 &1637862886
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10125,7 +10142,7 @@ MonoBehaviour:
   m_CellSize: {x: 110, y: 130}
   m_Spacing: {x: 2, y: 2}
   m_Constraint: 1
-  m_ConstraintCount: 3
+  m_ConstraintCount: 5
 --- !u!114 &1650781374
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10362,7 +10379,7 @@ MonoBehaviour:
   m_CellSize: {x: 110, y: 130}
   m_Spacing: {x: 2, y: 2}
   m_Constraint: 1
-  m_ConstraintCount: 3
+  m_ConstraintCount: 5
 --- !u!114 &1695511802
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11006,7 +11023,7 @@ MonoBehaviour:
   m_CellSize: {x: 110, y: 130}
   m_Spacing: {x: 2, y: 2}
   m_Constraint: 1
-  m_ConstraintCount: 3
+  m_ConstraintCount: 5
 --- !u!114 &1774502751
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11423,7 +11440,7 @@ MonoBehaviour:
   m_CellSize: {x: 110, y: 130}
   m_Spacing: {x: 2, y: 2}
   m_Constraint: 1
-  m_ConstraintCount: 3
+  m_ConstraintCount: 5
 --- !u!114 &1878221357
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11523,7 +11540,7 @@ MonoBehaviour:
   m_CellSize: {x: 110, y: 130}
   m_Spacing: {x: 2, y: 2}
   m_Constraint: 1
-  m_ConstraintCount: 3
+  m_ConstraintCount: 5
 --- !u!114 &1880902373
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13276,7 +13293,7 @@ MonoBehaviour:
   m_CellSize: {x: 110, y: 130}
   m_Spacing: {x: 2, y: 2}
   m_Constraint: 1
-  m_ConstraintCount: 3
+  m_ConstraintCount: 5
 --- !u!114 &2133347208
 MonoBehaviour:
   m_ObjectHideFlags: 0

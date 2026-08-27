@@ -4,8 +4,15 @@ using UnityEngine;
 
 public class SudokuGenerator
 {
-    const int SIZE = 9;//Define que el Sudoku es 9x9.Se usa para evitar escribir 9 en todas partes.
-    const int MAX_GENERATION_ATTEMPTS = 12;//Número máximo de intentos para generar un puzzle con la dificultad pedida.
+    int SIZE => SudokuRules.Size;//Define el tamaño del Sudoku desde la configuración compartida.
+    //Número máximo de intentos para generar un puzzle con la dificultad pedida.
+    //Se limita a pocos intentos en tableros grandes para evitar congelamientos.
+    int MaxGenerationAttempts()
+    {
+        int size = SudokuRules.Size;
+        if (size >= 16) return 6;  // 4x4: moderado, 6 intentos
+        return 10;                 // 3x4, 3x3, 2x3: rápido, 10 intentos
+    }
     SudokuSolver solver = new SudokuSolver();//Crea un solver matemático.Este se usa para contar soluciones y asegurar que el puzzle tenga solución única.
     SudokuDifficultyEvaluatorPro evaluator = new SudokuDifficultyEvaluatorPro();//Crea el evaluador de dificultad.
     //Este revisa qué técnicas usó el solver humano y decide si el puzzle es:Easy, Medium, Hard, Expert, Extreme
@@ -15,7 +22,8 @@ public class SudokuGenerator
         SudokuBoardData bestData = null;//Guarda el mejor tablero encontrado hasta ahora.
         //Porque puede que en 12 intentos no encuentre exactamente la dificultad pedida. Entonces devuelve el más cercano.
         int bestDistance = int.MaxValue;//Guarda qué tan lejos está la dificultad encontrada de la dificultad pedida.
-        for (int attempt = 1; attempt <= MAX_GENERATION_ATTEMPTS; attempt++)//Intenta generar hasta 12 puzzles.
+        int maxAttempts = MaxGenerationAttempts();
+        for (int attempt = 1; attempt <= maxAttempts; attempt++)//Intenta generar hasta N puzzles según el tamaño.
         {
             int targetRemoved = Random.Range(profile.minRemoved, profile.maxRemoved + 1);//Elige aleatoriamente cuántos números quitar dentro del rango de esa dificultad.
             int[,] solution = GenerateSolution();//Genera una solución completa válida.
@@ -31,8 +39,13 @@ public class SudokuGenerator
                 bestDistance = distance;//Actualiza el mejor Sudoku encontrado.
             }
             if (solved && realDiff == targetDifficulty)//Si el puzzle:fue resuelto por el solver humano y tiene exactamente la dificultad pedida
+            {
+                LogBlankCells(data);
                 return data;//lo devuelve de inmediato.
+            }
         }
+        if (bestData != null)
+            LogBlankCells(bestData);
         return bestData;//Si no encontró una coincidencia exacta después de 12 intentos, devuelve el mejor intento.
     }
     int[,] GenerateSolution()//Esta función crea una solución completa válida.
@@ -40,7 +53,10 @@ public class SudokuGenerator
         int[,] grid = new int[SIZE, SIZE];//Crea una matriz 9x9.
         for (int r = 0; r < SIZE; r++)//Recorre todas las filas
             for (int c = 0; c < SIZE; c++)//Recorre todas las columnas
-                grid[r, c] = (r * 3 + r / 3 + c) % SIZE + 1;//Esta es la fórmula base para crear un Sudoku válido.
+            {
+                int shift = (r % SudokuRules.BoxRows) * SudokuRules.BoxCols + (r / SudokuRules.BoxRows);
+                grid[r, c] = (shift + c) % SIZE + 1;
+            }
         //la primera fila la genera del 1 al 9 pero la primera caja igual la ordena del 1 al 9 para poner los numeros siguientes al lado dependiendo de la caja
         //como la fila 2 la caja baja a 4 5 6 entonces la siguiente fila de la siguiente caja pone al 7 8 y 9
         //cada fila avanza 3 posiciones y cada bloque de 3 filas avanza 1 más
@@ -69,12 +85,10 @@ public class SudokuGenerator
         for (int i = 0; i < order.Count && removed < targetRemoved; i++)//Recorre la lista mientras:queden posiciones por probar y todavía no se hayan borrado suficientes celdas
         {
             int index = order[i];//Toma una celda candidata.
-            int r = index / 9;//Convierte índice a fila.
-            //ejemplo si el index es 23 entonces r = 23 / 9 = 2
-            int c = index % 9;//Convierte índice a columna.
-            //ejemplo si el index es 23 entonces r = 23 / 9 = 2 y el resto es si 9 * 2 = 18 entonces de 23 - 18 = 5
-            int r2 = 8 - r;//Calcula la celda espejo. ejemplo si r2 = 8 - r entonces r2 = 8 - 2 = 6
-            int c2 = 8 - c;//Calcula la celda espejo. ejemplo si r2 = 8 - c entonces r2 = 8 - 5 = 3
+            int r = SudokuRules.GetRow(index);//Convierte índice a fila.
+            int c = SudokuRules.GetCol(index);//Convierte índice a columna.
+            int r2 = SudokuRules.Size - 1 - r;//Calcula la celda espejo.
+            int c2 = SudokuRules.Size - 1 - c;//Calcula la celda espejo.
             //entonces la celda espejo del index 23 que es r=2 y c=5 es r=6 y c=3
             if (puzzle[r, c] == 0)//Si esa celda ya estaba borrada, la salta.
                 continue;
@@ -113,7 +127,7 @@ public class SudokuGenerator
         var ctx = new SudokuContext//Crea un contexto temporal.
         {
             board = (int[,])puzzle.Clone(),//board es una copia del puzzle.
-            notesMask = new int[81]//notesMask empieza vacío.
+            notesMask = new int[SudokuRules.CellCount]//notesMask empieza vacío.
             //Esto es para que el solver humano pueda trabajar sin modificar el puzzle original.
         };
         var humanSolver = new SudokuHumanSolver(targetDifficulty);//Crea un solver humano.Este solver usa técnicas permitidas según dificultad.
@@ -126,11 +140,11 @@ public class SudokuGenerator
     }
     List<int> BuildShuffledPairSeeds()//Esta función crea una lista aleatoria de posiciones para intentar borrar celdas.Pero solo guarda una posición por cada par espejo.
     {
-        List<int> indices = new List<int>(41);//Crea una lista con capacidad 41.
-        //¿Por qué 41? -- Un Sudoku tiene 81 celdas. -- Si borras con simetría: -- 40 pares simétricos + 1 celda central = 41 semillas
-        for (int i = 0; i < 81; i++)//Recorre todas las celdas.Para cada celda calcula su espejo:
+        int cellCount = SudokuRules.CellCount;
+        List<int> indices = new List<int>(cellCount / 2 + 1);//Crea una lista con capacidad suficiente para las celdas del tablero.
+        for (int i = 0; i < cellCount; i++)//Recorre todas las celdas.Para cada celda calcula su espejo:
         {
-            int mirror = 80 - i;//ejemplo : 0 espejo 80,1 espejo 79,2 espejo 78 .......40 espejo 40
+            int mirror = cellCount - 1 - i;//ejemplo : 0 espejo 15,1 espejo 14,2 espejo 13 .......7 espejo 8
             if (i <= mirror)//Solo agrega i si: i <= mirror. Eso evita agregar dos veces el mismo par.
                 //Ejemplo: agrega 0, pero no agrega 80,agrega 1, pero no agrega 79
                 indices.Add(i);//lo agrega a la lista
@@ -145,7 +159,8 @@ public class SudokuGenerator
     }
     void ShuffleNumbers(int[,] grid)//Esta función mezcla los números del Sudoku.
     {
-        int[] map = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };//Crea un arreglo de números del 1 al 9.Este arreglo será el mapa de reemplazo.
+        int[] map = new int[SIZE];
+        for (int i = 0; i < SIZE; i++) map[i] = i + 1;//Crea un arreglo de números del 1 al tamaño del tablero.Este arreglo será el mapa de reemplazo.
 
         for (int i = 0; i < SIZE; i++)//Recorre el arreglo map.
         {
@@ -161,57 +176,32 @@ public class SudokuGenerator
         //Ejemplo: grid[r, c] = 3. Entonces:map[3 - 1]  = map[2]
     }
 
-    void ShuffleRows(int[,] grid)//Esta función mezcla filas, pero solo dentro de su mismo bloque de 3 filas.
-    //En Sudoku, las filas se agrupan así:
-    //Bloque 0: filas 0, 1, 2
-    //Bloque 1: filas 3, 4, 5
-    //Bloque 2: filas 6, 7, 8
-    //En Sudoku, las filas se agrupan así ya que son vistas desde los lados:
-        //                        bloque 1   bloque 2    bloque 3
-        //                        columna    columna     columna
-        //       bloque 0 - filas     0   ||     1    ||     2
-        //       bloque 1 - filas     3   ||     4    ||     5
-        //       bloque 2 - filas     6   ||     7    ||     8
+    void ShuffleRows(int[,] grid)
     {
-        for (int block = 0; block < 3; block++)//Recorre los tres bloques de filas.
-            SwapRows(grid,block * 3 + Random.Range(0, 3),block * 3 + Random.Range(0, 3));//Calcula una fila aleatoria dentro de ese bloque.
-            //Intercambia dos filas del mismo bloque. porque necesita escoger fila origen y fila destino
-            //ejemplo SwapRows(grid,block * 3 + Random.Range(0, 3),block * 3 + Random.Range(0, 3));
-            //quedaria SwapRows(grid,1(que es el bloque) * 3 + 2(el numero random),2(que es el bloque) * 3 + 1(el numero random));
-            //quedaria SwapRows(grid,1 * 3 = 3 +2 =5 ,2 * 3 = 6 + 1 = 7));
-            //entonces SwapRows(grid,5 ,7)); que remplazaria el numero 5 de la fila por el 7
+        int blockCount = SudokuRules.BoxCols;
+        int boxRows = SudokuRules.BoxRows;
+        for (int block = 0; block < blockCount; block++)
+        {
+            int r1 = block * boxRows + Random.Range(0, boxRows);
+            int r2 = block * boxRows + Random.Range(0, boxRows);
+            SwapRows(grid, r1, r2);
+        }
     }
     void SwapRows(int[,] grid, int r1, int r2)//Esta función intercambia dos filas completas.recibe el grid => tablero el r1   => primera fila el r2 => segunda fila
     {
         for (int c = 0; c < SIZE; c++)//Recorre todas las columnas de esas filas.
             (grid[r1, c], grid[r2, c]) = (grid[r2, c], grid[r1, c]);//Intercambia los valores de ambas filas columna por columna.
-        //ejemplo 
-        //fila 0: 1 2 3 4 5 6 7 8 9
-        //fila 2: 7 8 9 1 2 3 4 5 6
-        //despues del SwapRows(grid, 0, 2):
-        //fila 0: 7 8 9 1 2 3 4 5 6
-        //fila 2: 1 2 3 4 5 6 7 8 9
-        //cambia una fila completa por otra
     }
-    void ShuffleColumns(int[,] grid)//Esta función mezcla columnas dentro de cada bloque de 3 columnas.
+    void ShuffleColumns(int[,] grid)
     {
-        //En Sudoku, las columnas se agrupan así:
-        //Bloque 0: columnas 0, 3, 6
-        //Bloque 1: columnas 1, 4, 7
-        //Bloque 2: columnas 2, 5, 8
-        //En Sudoku, las columnas se agrupan así ya que son vistas desde arriba:
-        //                        bloque 1   bloque 2    bloque 3
-        //                        columna    columna     columna
-        //       bloque 0 - filas     0   ||     1    ||     2
-        //       bloque 1 - filas     3   ||     4    ||     5
-        //       bloque 2 - filas     6   ||     7    ||     8
-        for (int block = 0; block < 3; block++)//Recorre los tres bloques de columnas.
-            SwapColumns(grid,block * 3 + Random.Range(0, 3),block * 3 + Random.Range(0, 3));//Calcula una columna aleatoria dentro del bloque.
-            //Intercambia dos columnas del mismo bloque. porque necesita escoger columna origen y columna destino
-            //ejemplo SwapColumns(grid,block * 3 + Random.Range(0, 3),block * 3 + Random.Range(0, 3));
-            //quedaria SwapColumns(grid,1(que es el bloque) * 3 + 2(el numero random),2(que es el bloque) * 3 + 1(el numero random));
-            //quedaria SwapColumns(grid,1 * 3 = 3 +2 =5 ,2 * 3 = 6 + 1 = 7));
-            //entonces SwapColumns(grid,5 ,7)); que remplazaria el numero 5 de la columna por el 7
+        int blockCount = SudokuRules.BoxRows;
+        int boxCols = SudokuRules.BoxCols;
+        for (int block = 0; block < blockCount; block++)
+        {
+            int c1 = block * boxCols + Random.Range(0, boxCols);
+            int c2 = block * boxCols + Random.Range(0, boxCols);
+            SwapColumns(grid, c1, c2);
+        }
     }
     void SwapColumns(int[,] grid, int c1, int c2)//Esta función intercambia dos columnas completas.recibe el grid => tablero el r1   => primera columnas el r2 => segunda columnas
     {
@@ -249,14 +239,45 @@ public class SudokuGenerator
     //(int minRemoved, int maxRemoved) Esto significa que la función devuelve una tupla.Una tupla es devolver más de un valor.En este caso devuelve:minRemoved y maxRemoved
     //ejemplo return (30, 36); significa minRemoved = 30 y maxRemoved = 36
     {
+        int cellCount = SudokuRules.CellCount;
+
+        // Tableros normales (2x3, 3x3, 3x4, 4x4): rango clásico basado en mitad de celdas
+        int baseRemoved = Mathf.Max(2, cellCount / 2 - 2);
         return difficulty switch//Esto es un switch expression.Sirve para devolver un valor según el caso.
         {
-            SudokuGameManager.Difficulty.Easy => (30, 36),
-            SudokuGameManager.Difficulty.Medium => (37, 44),
-            SudokuGameManager.Difficulty.Hard => (45, 52),
-            SudokuGameManager.Difficulty.Expert => (53, 58),
-            SudokuGameManager.Difficulty.Extreme => (59, 64),
-            _ => (37, 44)//El _ significa: cualquier otro caso. Es el valor por defecto.Si por alguna razón llega una dificultad desconocida, usa rango Medium.
+            SudokuGameManager.Difficulty.Easy    => (baseRemoved,      baseRemoved + 4),
+            SudokuGameManager.Difficulty.Medium  => (baseRemoved + 3,  baseRemoved + 8),
+            SudokuGameManager.Difficulty.Hard    => (baseRemoved + 7,  baseRemoved + 12),
+            SudokuGameManager.Difficulty.Expert  => (baseRemoved + 10, baseRemoved + 14),
+            SudokuGameManager.Difficulty.Extreme => (baseRemoved + 12, baseRemoved + 16),
+            _ => (baseRemoved + 3, baseRemoved + 8)//El _ significa: cualquier otro caso. Es el valor por defecto.Si por alguna razón llega una dificultad desconocida, usa rango Medium.
+        };
+    }
+
+    void LogBlankCells(SudokuBoardData data)
+    {
+        if (data == null || data.values == null)
+            return;
+
+        int blankCells = 0;
+        for (int i = 0; i < data.values.Length; i++)
+        {
+            if (data.values[i] == 0)
+                blankCells++;
+        }
+
+        Debug.Log($"Sudoku {GetVariantLabel()}: {blankCells} celdas en blanco");
+    }
+
+    string GetVariantLabel()
+    {
+        return SudokuRules.CurrentVariant switch
+        {
+            SudokuRules.SudokuVariant.Variant2x3 => "2x3",
+            SudokuRules.SudokuVariant.Standard3x3 => "3x3",
+            SudokuRules.SudokuVariant.Variant3x4 => "3x4",
+            SudokuRules.SudokuVariant.Standard4x4 => "4x4",
+            _ => "desconocido"
         };
     }
 }

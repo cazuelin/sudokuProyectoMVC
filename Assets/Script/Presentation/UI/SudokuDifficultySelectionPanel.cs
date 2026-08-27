@@ -33,10 +33,37 @@ public class SudokuDifficultySelectionPanel : MonoBehaviour
             cancelButton.onClick.AddListener(() => Close(true));//Agrega la acción de cerrar el panel al presionar cancelar.
         }
     }
+    public void Setup(TextMeshProUGUI title, Button[] difficultyButtons, Button cancel)
+    //Reasigna las referencias del panel construido por código. Lo usa SudokuGameUI.
+    //difficultyButtons debe traer: [Easy, Medium, Hard, Expert, Extreme].
+    {
+        titleText = title;
+        if (difficultyButtons != null && difficultyButtons.Length >= 5)
+        {
+            easyButton = difficultyButtons[0];
+            mediumButton = difficultyButtons[1];
+            hardButton = difficultyButtons[2];
+            expertButton = difficultyButtons[3];
+            extremeButton = difficultyButtons[4];
+        }
+        cancelButton = cancel;
+    }
     public void Open(int slot)//Esta función abre el panel.
         //recibe int slot : El slot donde se quiere crear la partida.
     {
         currentSlot = slot;//Guarda ese slot.
+        //Asegura que el panel cubra toda la pantalla (se posiciona encima) aunque el prefab
+        //esté posicionado a un lado o sobresaliendo del mapa.
+        var rt = transform as RectTransform;
+        if (rt != null)
+        {
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+            rt.anchoredPosition = Vector2.zero;
+            rt.localScale = Vector3.one;
+        }
         gameObject.SetActive(true);//Activa el panel en pantalla.
         //Cuando se activa, Unity llama automáticamente a OnEnable.
     }
@@ -99,5 +126,6 @@ public class SudokuDifficultySelectionPanel : MonoBehaviour
         OnDifficultySelected?.Invoke(currentSlot, difficulty);//Dispara el evento.
         //Envía: currentSlot y difficulty
         //Ejemplo: slot 1, dificultad Expert
+        Close(true);//Cierra el panel al elegir dificultad, aunque la escena tarde en cambiar.
     }
 }

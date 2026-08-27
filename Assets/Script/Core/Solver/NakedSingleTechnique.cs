@@ -6,14 +6,14 @@ public class NakedSingleTechnique : ISudokuTechnique//Este script representa la 
         //SudokuContext ctx : la técnica recibe el estado actual del tablero y los candidatos.
         //out SudokuHint hint : Esto permite devolver información de la jugada encontrada.
     {
-        for (int r = 0; r < 9; r++)//Este primer for recorre las filas del tablero.
+        for (int r = 0; r < SudokuRules.Size; r++)//Este primer for recorre las filas del tablero.
         {
-            for (int c = 0; c < 9; c++)//Este segundo for recorre las columnas.
+            for (int c = 0; c < SudokuRules.Size; c++)//Este segundo for recorre las columnas.
             {
                 if (ctx.board[r, c] != 0) continue;//Aquí revisa si la celda ya tiene número. Si esta celda ya tiene número, no la analices y continua.
                 //0 = celda vacía
                 //1-9 = número colocado
-                int index = r * 9 + c;//Aquí convierte fila y columna a un índice lineal.
+                int index = SudokuRules.GetCellIndex(r, c);//Aquí convierte fila y columna a un índice lineal.
                 //ejemplo
                 //r = 2 y c = 5
                 //int index = r * 9 + c

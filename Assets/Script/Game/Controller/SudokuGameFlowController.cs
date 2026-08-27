@@ -38,15 +38,35 @@ public class SudokuGameFlowController : MonoBehaviour
     [SerializeField] float defeatDelay = 2f;//Tiempo de espera antes de mostrar el panel de derrota.
     [SerializeField] float defeatButtonsDelay = 0.5f;//Tiempo de espera entre mostrar el panel de derrota y mostrar sus botones/acciones.
 
+    void ResolveReferences()
+    {
+        //SudokuSceneRef.Resolve valida que la referencia sea una instancia viva de la escena.
+        //Si apunta a un prefab (asset) o a un objeto destruido, la busca automáticamente,
+        //así los managers se "acoplan" a las instancias creadas por SudokuGameUI.
+        boardView = SudokuSceneRef.Resolve(boardView);
+        saveManager = SudokuSceneRef.Resolve(saveManager);
+        boardController = SudokuSceneRef.Resolve(boardController);
+        inputController = SudokuSceneRef.Resolve(inputController);
+        difficultyUI = SudokuSceneRef.Resolve(difficultyUI);
+        mistakeSystem = SudokuSceneRef.Resolve(mistakeSystem);
+        livesUI = SudokuSceneRef.Resolve(livesUI);
+        hintsUI = SudokuSceneRef.Resolve(hintsUI);
+        timer = SudokuSceneRef.Resolve(timer);
+        victoryPanel = SudokuSceneRef.ResolvePanel(victoryPanel, typeof(SudokuVictoryPanel));
+        defeatPanel = SudokuSceneRef.ResolvePanel(defeatPanel, typeof(SudokuDefeatPanel));
+        //Los botones de los paneles suelen ser el propio panel en la UI nueva.
+        victoryPanelButtons = SudokuSceneRef.IsSceneInstance(victoryPanelButtons) ? victoryPanelButtons : victoryPanel;
+        defeatActionsPanel = SudokuSceneRef.IsSceneInstance(defeatActionsPanel) ? defeatActionsPanel : defeatPanel;
+        difficultySelectionPanel = SudokuSceneRef.Resolve(difficultySelectionPanel);
+        sessionContext = SudokuSceneRef.ResolveSession(sessionContext);
+    }
+
     void Start()
     {       
-        if (difficultySelectionPanel == null)//Aquí pregunta:¿No tengo asignado el panel de selección de dificultad?
-            //Si no está asignado en el Inspector, intenta buscarlo automáticamente en la escena.
-        {
-            difficultySelectionPanel = FindFirstObjectByType<SudokuDifficultySelectionPanel>();
-            //Busca el primer objeto activo de tipo SudokuDifficultySelectionPanel.
-            //Esto sirve como respaldo por si olvidaste arrastrarlo en Unity.
-        }
+        ResolveReferences();
+        if (boardController == null || inputController == null || mistakeSystem == null || timer == null || sessionContext == null)
+            return;
+
         mistakeSystem.OnGameOver += OnGameOver;//Aquí se suscribe a un evento.
         //Cuando mistakeSystem dispare OnGameOver, ejecuta mi función OnGameOver.
         //en simple palabras Si el jugador pierde por errores, este script se entera.
@@ -107,6 +127,10 @@ public class SudokuGameFlowController : MonoBehaviour
         //flowController.Initialize();
         //Esta función decide: ¿Cargo una partida guardada o genero una partida nueva?
     {
+        //Resolución perezosa: GameManager.Start puede llamar a Initialize ANTES de que este script
+        //ejecute su Start, por eso se resuelven las referencias aquí (los prefabs ya fueron
+        //instanciados por SudokuGameUI en su Awake).
+        ResolveReferences();
         if (sessionContext == null)//Si sessionContext no está asignado, no puede continuar.
             //¿Por qué? Porque necesita saber: SelectedSlot , SelectedDifficulty , LoadFromSave , GameState
             //Sin eso, no sabe qué partida cargar ni qué dificultad generar.
@@ -174,7 +198,8 @@ public class SudokuGameFlowController : MonoBehaviour
             //En palabras simples : Dibuja los números, bloquea visualmente las celdas fijas y muestra las notas.
             data.values,//values son los números del tablero.
             data.fixedCells,//fixedCells indica qué celdas son fijas.
-            data.notesMask//notesMask contiene las notas/candidatos.
+            data.notesMask,//notesMask contiene las notas/candidatos.
+            data.hintCells//celdas colocadas por pista.
         );
         ClearEndPanels();//Limpia los paneles de victoria/derrota.
         //Esto es útil porque al cargar una partida no quieres que aparezca un panel viejo en pantalla.
@@ -198,7 +223,7 @@ public class SudokuGameFlowController : MonoBehaviour
         boardController.SetInitialState(data);//Guarda el estado inicial del tablero.
         //Esto es importante para poder reiniciar la partida con: boardController.ResetBoard();
         //Sin este estado inicial, no sabría a qué tablero volver.
-        boardView.UpdateBoard(data.values, data.fixedCells, data.notesMask);//Actualiza la vista. Muestra en pantalla el Sudoku generado.
+        boardView.UpdateBoard(data.values, data.fixedCells, data.notesMask, data.hintCells);//Actualiza la vista. Muestra en pantalla el Sudoku generado.
         mistakeSystem.Init(0);//Reinicia el sistema de errores en 0. es decir Nueva partida, cero errores.
         livesUI?.UpdateLives(0);//Actualiza la UI de vidas/errores para mostrar cero errores.
         inputController?.ResetHints();//Reinicia las pistas disponibles.
@@ -234,6 +259,9 @@ public class SudokuGameFlowController : MonoBehaviour
         //Entonces cuando el jugador comete un error, mistakeSystem avisa : OnMistakeChanged(mistakes);
         //int mistakes : Recibe la cantidad actual de errores.
     {
+        //Resuelve livesUI si aún no está (vive en el prefab DatosNivel instanciado en runtime).
+        if (livesUI == null)
+            livesUI = SudokuSceneRef.Resolve(livesUI);
         livesUI?.UpdateLives(mistakes);//Actualiza la UI de vidas/errores.
         //El ?. significa: Si livesUI no es null, llama UpdateLives.
         //En simple: Si el jugador tiene 2 errores, la UI muestra 2 errores.
@@ -242,6 +270,9 @@ public class SudokuGameFlowController : MonoBehaviour
         //Se conecta en Start así: inputController.OnHintsChanged += OnHintsChanged;
         //int remainingHints : Recibe cuántas pistas quedan.
     {
+        //Resuelve hintsUI si aún no está (vive en el prefab PanelAjustes/DatosNivel).
+        if (hintsUI == null)
+            hintsUI = SudokuSceneRef.Resolve(hintsUI);
         hintsUI?.UpdateHints(remainingHints);//Actualiza la UI de hints.
         //En simple: Si usaste una pista y ahora quedan 2, la UI muestra 2.
     }
@@ -298,7 +329,8 @@ public class SudokuGameFlowController : MonoBehaviour
             victoryPanel.SetActive(true);//Muestra el panel de victoria.
         if (victoryPanelButtons != null)
             victoryPanelButtons.SetActive(true);//Muestra los botones del panel de victoria.
-        saveManager?.DeleteSlot(sessionContext.SelectedSlot);//Borra la partida guardada del slot actual.
+        if (sessionContext != null)
+            saveManager?.DeleteSlot(sessionContext.SelectedSlot);//Borra la partida guardada del slot actual.
         //¿Por qué? Porque ya ganaste esa partida, entonces no tiene sentido dejarla como “continuar partida”.
         yield return new WaitForSeconds(victoryDelay);//Vuelve a esperar. Con victoryDelay = 2f, sería otra espera de 2 segundos.
         SceneManager.LoadScene("MainMenu");//Carga la escena del menú principal.
@@ -315,8 +347,18 @@ public class SudokuGameFlowController : MonoBehaviour
             defeatActionsPanel.SetActive(true);//Activa el panel de acciones de derrota.
         //Ahí podrían estar botones como: Reintentar , Nueva partida , Volver al menú
     }
+    public void ConfigureEndGamePanels(GameObject victory, GameObject victoryButtons, GameObject defeat, GameObject defeatActions, SudokuDifficultySelectionPanel difficultyPanel)
+    //Reasigna los paneles finales. Lo usa SudokuGameUI cuando construye la UI nueva en runtime.
+    {
+        victoryPanel = victory;
+        victoryPanelButtons = victoryButtons;
+        defeatPanel = defeat;
+        defeatActionsPanel = defeatActions;
+        difficultySelectionPanel = difficultyPanel;
+    }
     public void RestartLevel()//Esta función reinicia la misma partida, no genera una nueva.
     {
+        ResolveReferences();//Resolución perezosa: puede llamarse desde la UI (prefabs) sin Start previo.
         if (boardController == null || boardView == null || mistakeSystem == null)
             //Si falta una referencia esencial, se detiene.
             return;
@@ -324,26 +366,28 @@ public class SudokuGameFlowController : MonoBehaviour
         boardController.ResetBoard();//Restaura el tablero al estado inicial guardado.
         //Ese estado inicial se guardó antes con: boardController.SetInitialState(data);
         var data = boardController.GetBoardData();//Obtiene el tablero ya reiniciado.
-        boardView.UpdateBoard(data.values, data.fixedCells, data.notesMask);//Luego actualiza la vista
+        boardView.UpdateBoard(data.values, data.fixedCells, data.notesMask, data.hintCells);//Luego actualiza la vista
         //Así el tablero visual vuelve a mostrarse como al inicio.
         mistakeSystem.Init(0);//Reinicia errores
         livesUI?.UpdateLives(0);//Actualiza la UI de vidas/errores
         inputController?.ResetHints();//Reinicia pistas
         if (inputController != null)
             hintsUI?.UpdateHints(inputController.RemainingHints);//Actualiza la UI de pistas
-        sessionContext.GameState = SudokuGameState.Playing;//Pone el juego en estado jugando:
+        if (sessionContext != null)
+            sessionContext.GameState = SudokuGameState.Playing;//Pone el juego en estado jugando:
         timer.ResetTime();//Reinicia el timer
         timer.StartTimer();//arranca el timer
         ClearEndPanels();//limpia paneles finales
     }
     public void OpenNewGamePanel()//Esta función abre el panel para crear una nueva partida.
     {
+        ResolveReferences();//Resolución perezosa: puede llamarse desde la UI (prefabs) sin Start previo.
         if (defeatPanel != null)
             defeatPanel.SetActive(false);//Primero oculta el panel de derrota
         if (defeatActionsPanel != null)
             defeatActionsPanel.SetActive(false);//Luego oculta las acciones de derrota
         if (difficultySelectionPanel != null)
-            difficultySelectionPanel.Open(sessionContext.SelectedSlot);//Después abre el panel de dificultad
+            difficultySelectionPanel.Open(sessionContext != null ? sessionContext.SelectedSlot : -1);//Después abre el panel de dificultad
         //Le pasa el slot actual: sessionContext.SelectedSlot
         //eso significa La nueva partida se creará en este mismo slot.
         //Se usa normalmente después de perder, cuando el jugador quiere empezar otro Sudoku.
@@ -351,6 +395,7 @@ public class SudokuGameFlowController : MonoBehaviour
     void StartNewGameWithDifficulty(int slotIndex, SudokuGameManager.Difficulty difficulty)
         //Esta función inicia una partida nueva con una dificultad específica.
     {
+        ResolveReferences();//Resolución perezosa.
         if (sessionContext == null)//Sin sessionContext, no puede guardar slot ni dificultad.
             return;
         //si detecta sessionContext entonces guarda :
@@ -373,10 +418,12 @@ public class SudokuGameFlowController : MonoBehaviour
     }
     void EnsureBoardCreated()//Esta función asegura que el tablero visual exista antes de actualizarlo.
     {
+        if (boardView == null)
+            return;
         var cells = boardView.GetCells();//Obtiene la matriz/lista de celdas visuales del tablero.
-        if (cells[0, 0] == null)//Revisa la primera celda. Si está en null, significa que el tablero todavía no fue creado.
+        if (cells == null || cells[0, 0] == null)//Revisa la primera celda. Si está en null, significa que el tablero todavía no fue creado.
             boardView.CreateBoard();//entonces. Crea las celdas visuales.
         //Se usa antes de cargar o generar tablero para evitar intentar actualizar celdas que aún no existen.
-        //en simple Antes de pintar el Sudoku, asegúrate de que las 81 celdas visuales ya estén creadas.
+        //en simple Antes de pintar el Sudoku, asegúrate de que las celdas visuales ya estén creadas.
     }
 }

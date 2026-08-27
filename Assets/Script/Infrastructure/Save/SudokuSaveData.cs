@@ -13,6 +13,7 @@ public class SudokuSaveData//es, en esencia, el “paquete” que junta todo el 
     //Eso significa que el enum se convierte a número para poder serializarlo fácil.
     public List<SudokuMove> undoStack;//Guarda el historial de movimientos para soportar Undo.
     //Cada SudokuMove contiene: indice de celda , valor anterior , valor nuevo , notas anteriores , notas nuevas
+    public int undoBarrierIndex;//Guarda desde qué punto el undo puede retroceder después de una pista.
     public int mistakes;//Guarda cuántos errores lleva el jugador. Se usa para restaurar el estado del sistema de errores al cargar.
     public int[] previewValues;//Guarda una copia de los valores del tablero en formato de arreglo.
     //En SaveGame, se llena así: previewValues = (int[])board.boardData.values.Clone()

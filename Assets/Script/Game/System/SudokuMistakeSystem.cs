@@ -2,7 +2,13 @@ using System;
 using UnityEngine;
 public class SudokuMistakeSystem : MonoBehaviour
 {
-    public int maxMistakes = 3;//Cantidad máxima de errores permitidos. Por defecto es: 3
+    [SerializeField] SessionContext sessionContext;//Contexto compartido entre escenas.
+    [SerializeField] int maxMistakes = 3;//Cantidad máxima de errores permitidos. Por defecto es: 3
+    public int MaxMistakes => sessionContext != null ? sessionContext.MaxMistakes : maxMistakes;
+    public void Configure(SessionContext context)
+    {
+        sessionContext = context;
+    }
     //Como es public, puedes verlo y modificarlo desde otros scripts o desde el Inspector.
     int currentMistakes;//Cantidad actual de errores cometidos por el jugador.
     //Es privada porque no tiene public. 
@@ -31,10 +37,14 @@ public class SudokuMistakeSystem : MonoBehaviour
     public void RegisterMistake()//Esta función se llama cuando el jugador comete un error.
         //Por ejemplo, desde SudokuInputController : mistakeSystem?.RegisterMistake();
     {
+        //Si el jugador desactivó las vidas en Ajustes, los errores NO se cuentan
+        //(partida "sin vidas", para la gente que no quiere las vidas).
+        if (PlayerPrefs.GetInt("Sudoku_LivesEnabled", 1) == 0)
+            return;
         currentMistakes++;//Suma un error.
         OnMistakeChanged?.Invoke(currentMistakes);//Avisa que cambió el número de errores.
         //Por ejemplo, si ahora hay 2 errores, la UI puede mostrar 1 corazón lleno y 2 vacíos.
-        if (currentMistakes >= maxMistakes)//Pregunta si llegó al límite de errores.
+        if (currentMistakes >= MaxMistakes)//Pregunta si llegó al límite de errores.
             //Ejemplo:
             //currentMistakes = 3
             //maxMistakes = 3

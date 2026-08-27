@@ -15,4 +15,7 @@ MonoBehaviour:
   selectedSlot: 2
   loadFromSave: 0
   selectedDifficulty: 2
+  selectedVariant: 0
   gameState: 0
+  maxHints: 3
+  maxMistakes: 3

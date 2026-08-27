@@ -13,9 +13,9 @@ public class SudokuContext//Este script es pequeño, pero es muy importante para
         //Las reglas son:
         //1 El número no puede repetirse en la misma fila.
         //2 El número no puede repetirse en la misma columna.
-        //3 El número no puede repetirse en la misma caja 3x3.
+        //3 El número no puede repetirse en la misma caja.
     {
-        for (int i = 0; i < 9; i++)//Este for revisa fila y columna al mismo tiempo.
+        for (int i = 0; i < SudokuRules.Size; i++)//Este for revisa fila y columna al mismo tiempo.
         {
             if (board[r, i] == n) return false;//Primero revisa la fila:Si encuentra el mismo número n, devuelve:return false;
             if (board[i, c] == n) return false;//Luego revisa la columna:Si encuentra el mismo número n, devuelve:return false;
@@ -26,19 +26,11 @@ public class SudokuContext//Este script es pequeño, pero es muy importante para
         //ejemplo
         //r = 5
         //c = 7
-        int sr = (r / 3) * 3;//sr = (5 / 3) * 3 = 1 * 3 = 3
-        int sc = (c / 3) * 3;//sc = (7 / 3) * 3 = 2 * 3 = 6
-        //Eso significa que la celda [5, 7] pertenece a la caja que empieza en: fila 3, columna 6
-        //esa caja contiene
-        //[3,6] [3,7] [3,8]
-        //[4,6] [4,7] [4,8]
-        //[5,6] [5,7] [5,8]
-        for (int rr = 0; rr < 3; rr++)//primero recorre las filas de la caja de 3x3
-            for (int cc = 0; cc < 3; cc++)//luego recorre las columnas de la caja de 3x3
-                if (board[sr + rr, sc + cc] == n)//si sr = 3 y sc = 7
-                    //board[3, 6] board[3, 7] board[3, 6]
-                    //board[4, 6] board[4, 7] board[4, 8]
-                    //board[5, 6] board[5, 7] board[5, 8]
+        int sr = (r / SudokuRules.BoxRows) * SudokuRules.BoxRows;
+        int sc = (c / SudokuRules.BoxCols) * SudokuRules.BoxCols;
+        for (int rr = 0; rr < SudokuRules.BoxRows; rr++)//primero recorre las filas de la caja
+            for (int cc = 0; cc < SudokuRules.BoxCols; cc++)//luego recorre las columnas de la caja
+                if (board[sr + rr, sc + cc] == n)
                     return false;//Si encuentra el número n dentro de esa caja, devuelve:return false;
         return true;//Si no encontró el número repetido ni en fila, ni en columna, ni en caja, entonces sí se puede colocar.
     }

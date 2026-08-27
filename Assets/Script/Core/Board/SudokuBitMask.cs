@@ -1,29 +1,44 @@
 public class SudokuBitMask
 {
-    int[] rows = new int[9];//guarda los numeros que existen en cada fila
-    int[] cols = new int[9];//guarda los numeros que existen en cada columna
-    int[] boxes = new int[9];//guarda los numeros que existen en cada caja
+    int size;
+    int[] rows;
+    int[] cols;
+    int[] boxes;
     public void Clear()//limpia toda las mascaras deja filas,columnas y cajas en cero
     {
-        for (int i = 0; i < 9; i++)
+        size = SudokuRules.Size;
+        if (rows == null || rows.Length != size)
         {
-            rows[i] = 0;
-            cols[i] = 0;
-            boxes[i] = 0;
+            rows = new int[size];
+            cols = new int[size];
+            boxes = new int[SudokuRules.TotalBoxCount];
+        }
+        else
+        {
+            for (int i = 0; i < size; i++)
+            {
+                rows[i] = 0;
+                cols[i] = 0;
+            }
+            int boxCount = boxes.Length;
+            for (int i = 0; i < boxCount; i++)
+            {
+                boxes[i] = 0;
+            }
         }
     }
     public void Init(int[,] board)//recibe un tablero y registra todos los numeros existentes en las mascaras
     {
         Clear();//limpiar el bitmask
-        for (int r = 0; r < 9; r++)//recorre todas la filas
-            for (int c = 0; c < 9; c++)//recorre todas las columnas
+        for (int r = 0; r < size; r++)//recorre todas la filas
+            for (int c = 0; c < size; c++)//recorre todas las columnas
             {
                 int number = board[r, c];
                 if (number != 0)//si encuentra un numero distinto a 0
                     Place(r, c, number);//llama al metodo place
             }
     }
-    int GetBoxIndex(int r, int c) => (r / 3) * 3 + (c / 3);//calcula a que caja 3x3 pertenece una celda
+    int GetBoxIndex(int r, int c) => SudokuRules.GetBoxIndex(r, c);//calcula a que caja pertenece una celda
     public bool CanPlace(int r, int c, int n)
     {
         int mask = 1 << (n - 1);//significa mover bits hacia la izquierda

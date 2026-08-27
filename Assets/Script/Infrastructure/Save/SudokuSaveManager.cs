@@ -13,9 +13,23 @@ public class SudokuSaveManager : MonoBehaviour//es el script que coordina el gua
     [SerializeField] SudokuInputController inputController;//Referencia al controlador de input.
     //Aquí se usa principalmente para guardar y restaurar las pistas restantes
     [SerializeField] SessionContext sessionContext;//Referencia al contexto de sesión. Se usa para guardar y restaurar la dificultad:
+    void Awake()//Resuelve las referencias de forma robusta (se "acoplan" a las instancias reales).
+    {
+        board = SudokuSceneRef.Resolve(board);
+        timer = SudokuSceneRef.Resolve(timer);
+        mistakeSystem = SudokuSceneRef.Resolve(mistakeSystem);
+        inputController = SudokuSceneRef.Resolve(inputController);
+        sessionContext = SudokuSceneRef.ResolveSession(sessionContext);
+    }
     public void SaveGame(int slot)//Esta función guarda la partida actual en un slot.
     {
-        if (board == null || timer == null || mistakeSystem == null)//Primero revisa si existen referencias básicas del juego.
+        //Resolución perezosa: si el Awake no alcanzó a resolver (por ejemplo por un error de UI),
+        //se vuelve a resolver aquí para no fallar.
+        board = SudokuSceneRef.Resolve(board);
+        timer = SudokuSceneRef.Resolve(timer);
+        mistakeSystem = SudokuSceneRef.Resolve(mistakeSystem);
+        sessionContext = SudokuSceneRef.ResolveSession(sessionContext);
+        if (board == null || board.boardData == null || timer == null || mistakeSystem == null)//Primero revisa si existen referencias básicas del juego.
             //Si falta board, timer o mistakeSystem, no puede guardar una partida.
         {
             return;
@@ -38,6 +52,7 @@ public class SudokuSaveManager : MonoBehaviour//es el script que coordina el gua
             //el enum seria Easy , medium , hard , expert y extreme  internamente se puede convertir a int.
             undoStack = board.GetUndoStack() ?? new List<SudokuMove>(),//Guarda la pila/lista de movimientos para poder restaurar el undo.
             //El operador ?? significa:  Si board.GetUndoStack() devuelve null, usa una lista vacía.
+            undoBarrierIndex = board.GetUndoBarrierIndex(),//Guarda la barrera de undo dejada por pistas.
             mistakes = mistakeSystem.GetMistakes(),//Guarda la cantidad actual de errores.
             previewValues = (int[])board.boardData.values.Clone(),//Guarda una copia de los valores actuales del tablero.
             //Clone() crea una copia del arreglo. Esto sirve como vista previa del slot, por ejemplo para mostrar un resumen del guardado en el menú.
@@ -58,6 +73,7 @@ public class SudokuSaveManager : MonoBehaviour//es el script que coordina el gua
         //si pasa las validaciones entonces puede comenzar a cargar los datos del juego
         board.SetBoardData(data.board);//Restaura el tablero actual.
         board.SetUndoRedo(data.undoStack);//Restaura la lista de undo/redo. Así el jugador puede seguir usando undo después de cargar.
+        board.SetUndoBarrierIndex(data.undoBarrierIndex);//Restaura la barrera de undo para no deshacer pistas.
         if (data.initialBoard != null)//Si existe estado inicial guardado, lo restaura.
         {
             board.SetInitialState(data.initialBoard);//restaura el estado inicial guardado

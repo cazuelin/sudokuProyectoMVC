@@ -4,6 +4,22 @@ using UnityEngine;
 public class SudokuMenuSlotsController : MonoBehaviour//Este script controla los slots del menú principal.
 //Su trabajo es crear visualmente los slots, revisar si tienen partida guardada, y conectar los botones de crear, continuar o borrar.
 {
+    static readonly SudokuRules.SudokuVariant[] SlotVariants =
+    {
+        SudokuRules.SudokuVariant.Variant2x3,
+        SudokuRules.SudokuVariant.Standard3x3,
+        SudokuRules.SudokuVariant.Variant3x4,
+        SudokuRules.SudokuVariant.Standard4x4
+    };
+
+    static readonly string[] SlotTitles =
+    {
+        "Sudoku 2x3",
+        "Sudoku 3x3",
+        "Sudoku 3x4",
+        "Sudoku 4x4"
+    };
+
     [SerializeField] SudokuSaveManager saveManager;//Referencia al sistema de guardado.
     //Sirve para revisar, cargar datos o borrar slots.
     //saveManager le dice al menú si un slot está vacío o tiene partida guardada.
@@ -14,25 +30,30 @@ public class SudokuMenuSlotsController : MonoBehaviour//Este script controla los
     //prefab es el molde visual de cada slot del menú.
     [SerializeField] Transform container;//Es el contenedor donde se van a crear los slots.
     //container es el lugar donde aparecen los slots en pantalla.
-    [SerializeField] int slotCount = 3;//Cantidad de slots que se van a crear.
-    //ejemplo : Si cambias slotCount a 5, debería crear 5 slots.
     [SerializeField] SudokuDifficultySelectionPanel difficultySelectionPanel;
     //Referencia al panel de selección de dificultad.
-    //Se usa cuando el jugador presiona “crear” en un slot vacío.
-    //difficultySelectionPanel permite elegir la dificultad antes de crear una partida nueva.
+    [SerializeField] GameObject difficultyPanelPrefab;
+    //PREFAB COMPARTIDO del panel de dificultad (el mismo que usan las escenas de juego).
+    //Si la escena del menú no tiene el panel (o lo eliminaste al convertirlo en prefab),
+    //se instancia este prefab: editar el prefab actualiza el menú y el juego a la vez.
     readonly List<SudokuSaveSlotItem> slotViews = new List<SudokuSaveSlotItem>();//Esta lista guarda los slots visuales que se crean.
-    //ejemplo:
-    //slotViews[0] -> Slot 1
-    //slotViews[1] -> Slot 2
-    //slotViews[2] -> Slot 3
-    //slotViews guarda las referencias a todos los slots creados para poder actualizarlos después.
     void Start()//Start es una función de Unity. Se ejecuta automáticamente cuando el GameObject entra en escena.
     {
-        // Si no hay panel asignado, busca en la escena
         if (difficultySelectionPanel == null)//pregunta ¿No tengo asignado el panel de dificultad?
         {
-            difficultySelectionPanel = FindFirstObjectByType<SudokuDifficultySelectionPanel>();
+            difficultySelectionPanel = FindInactiveComponent<SudokuDifficultySelectionPanel>();
             //Si no está asignado desde el Inspector, intenta buscarlo automáticamente:
+            //IMPORTANTE: el panel del menú está INACTIVO en la escena, por eso se busca con
+            //FindInactiveComponent (FindFirstObjectByType no encuentra objetos inactivos).
+        }
+        if (difficultySelectionPanel == null && difficultyPanelPrefab != null)
+        {
+            //La escena no tiene el panel (se convirtió en prefab): se instancia el prefab compartido
+            //como hijo del Canvas del menú, para que sea el MISMO que aparece en las escenas de juego.
+            var canvas = FindFirstObjectByType<Canvas>();
+            var go = Instantiate(difficultyPanelPrefab, canvas != null ? canvas.transform : null);
+            go.SetActive(false);
+            difficultySelectionPanel = go.GetComponent<SudokuDifficultySelectionPanel>();
         }
         if (difficultySelectionPanel != null)//Si encontró el panel o si existe el difficultySelectionPanel
         {            
@@ -56,7 +77,6 @@ public class SudokuMenuSlotsController : MonoBehaviour//Este script controla los
     {
         if (difficultySelectionPanel != null)////Si encontró el panel o si existe el difficultySelectionPanel
             difficultySelectionPanel.OnDifficultySelected -= HandleDifficultySelected;//se desuscribe
-        //Deja de escuchar el evento de selección de dificultad.
         foreach (var slot in slotViews)//Luego recorre todos los slots creados
             //slotViews contiene los SudokuSaveSlotItem que se crearon en BuildView.
         {
@@ -79,14 +99,10 @@ public class SudokuMenuSlotsController : MonoBehaviour//Este script controla los
 
         slotViews.Clear();//Limpia la lista interna de slots.
         //Esto es importante porque si destruiste los objetos visuales, también debes limpiar sus referencias guardadas.
-        for (int i = 0; i < slotCount; i++)//recorre la cantidad maxima de slot para poder instanciarlo y posterior crearlos
+        for (int i = 0; i < SlotVariants.Length; i++)//Crea exactamente un slot por cada variante disponible.
         {
             var slot = Instantiate(prefab, container);//Crea una copia del prefab del slot dentro del contenedor.
-            slot.Init(i);//Inicializa el slot con su índice.
-            //Ejemplo:
-            //i = 0 -> Slot 1
-            //i = 1 -> Slot 2
-            //i = 2 -> Slot 3
+            slot.Init(i, SlotTitles[i]);//Inicializa el slot con su índice y su nombre visible.
 
             //Luego conecta eventos del slot
             slot.OnContinueRequested += HandleContinueRequested;
@@ -101,14 +117,7 @@ public class SudokuMenuSlotsController : MonoBehaviour//Este script controla los
     void RefreshAll()//Esta función actualiza todos los slots.
     {
         for (int i = 0; i < slotViews.Count; i++)//Recorre la lista de slots creados.
-            //Si tienes 3 slots:
-            //i = 0
-            //i = 1
-            //i = 2
             RefreshSlot(i);//Actualiza ese slot individual.
-        //RefreshSlot revisa si hay guardado en ese índice.
-        //Si no hay, muestra: Nuevo juego
-        //si hay, muestra: Dificultad • Tiempo
     }
     void RefreshSlot(int slotIndex)//Esta función actualiza visualmente un slot específico.
         //recibe int slotIndex : El índice del slot que se quiere actualizar.
@@ -122,59 +131,55 @@ public class SudokuMenuSlotsController : MonoBehaviour//Este script controla los
         if (data == null)//Si no hay datos
         {
             view.RenderEmpty();//muestra el slot como vacío.
-            //RenderEmpty cambia la UI a algo como: 
-            //Nuevo juego
-            //[Crear]
             return;//Luego hace return para terminar.
         }
         view.RenderSaved((SudokuGameManager.Difficulty)data.difficulty, data.time);//Muestra el slot como guardado.
-        //Convierte la dificultad guardada desde int a enum: (SudokuGameManager.Difficulty)data.difficulty
-        //Y le pasa también el tiempo: data.time
-        //Eso termina mostrando algo como:
-        //Hard • 05:32
-        //[Continuar] [Borrar]
     }
     void HandleContinueRequested(int slotIndex)//Esta función se llama cuando el jugador presiona Continuar en un slot.
-        //recibe slotIndex : El slot que quiere continuar.
     {
         if (!saveManager.HasSlot(slotIndex))//pregunta ¿No existe guardado en este slot?
-            //El ! significa “no”.
         {
-            //Si no existe:
             RefreshSlot(slotIndex);//Actualiza visualmente el slot, probablemente dejándolo como vacío.
             return;//Y termina
         }
-        //sí existe guardado
-        sessionController.ContinueGame(slotIndex);
-        //Le dice al SudokuSessionController: Prepara la sesión para cargar este slot y entra a la escena del juego.
-        //Dentro de ContinueGame, se marca: LoadFromSave = true
+        if (slotIndex < 0 || slotIndex >= SlotVariants.Length)
+            return;
+        sessionController.ContinueGame(slotIndex, SlotVariants[slotIndex]);
     }
 
     void HandleDeleteRequested(int slotIndex)//Esta función se llama cuando el jugador presiona Borrar en un slot.
     {
         saveManager.DeleteSlot(slotIndex);//Borra el archivo guardado de ese slot.
         RefreshSlot(slotIndex);//Actualiza visualmente el slot.
-        //Después de borrar, debería mostrarse como:
-        //Nuevo juego
-        //[Crear]
     }
     void HandleCreateRequested(int slotIndex)//Esta función se llama cuando el jugador presiona Crear en un slot vacío.
-        //Le pasa el int slotIndex : Así el panel sabe en qué slot se creará la partida.
     {
-        if (difficultySelectionPanel != null)//Si existe el panel de dificultad
+        if (slotIndex < 0 || slotIndex >= SlotVariants.Length)
+            return;
+
+        if (difficultySelectionPanel != null)//Abre el panel de dificultad directamente.
         {
-            difficultySelectionPanel.Open(slotIndex);//abre el panel de dificultad
-        }            
+            difficultySelectionPanel.Open(slotIndex);
+        }
     }
     void HandleDifficultySelected(int slotIndex, SudokuGameManager.Difficulty difficulty)
-    //Esta función se llama cuando el jugador ya eligió una dificultad en el panel.
-    //recibe int slotIndex : El slot donde se creará la partida.
-    //recibe SudokuGameManager.Difficulty difficulty : La dificultad elegida.
     {
-        sessionController.StartNewGame(slotIndex, difficulty);//Esto prepara la sesión
-        //SelectedSlot = slotIndex
-        //SelectedDifficulty = difficulty
-        //LoadFromSave = false
-        //y carga la escena del juego.
+        if (slotIndex < 0 || slotIndex >= SlotVariants.Length)
+            return;
+
+        sessionController.StartNewGame(slotIndex, difficulty, SlotVariants[slotIndex]);
+    }
+    T FindInactiveComponent<T>() where T : Component
+    {
+        //FindFirstObjectByType no encuentra objetos inactivos, por eso los paneles del menú
+        //(que están inactivos en la escena) se buscan con Resources.FindObjectsOfTypeAll.
+        //Filtra por scene.IsValid() para descartar assets de prefabs cargados en memoria.
+        foreach (var candidate in Resources.FindObjectsOfTypeAll<T>())
+        {
+            var go = candidate.gameObject;
+            if (go.scene.IsValid() && (go.hideFlags & HideFlags.HideInHierarchy) == 0)
+                return candidate;
+        }
+        return null;
     }
 }

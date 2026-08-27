@@ -8,20 +8,20 @@ public class HiddenSingleTechnique : ISudokuTechnique//Esta técnica busca un Hi
     //SudokuContext ctx : la técnica recibe el estado actual del tablero y los candidatos.
     //out SudokuHint hint : Esto permite devolver información de la jugada encontrada.
     {
-        for (int r = 0; r < 9; r++)//primero revisa las filas
+        for (int r = 0; r < SudokuRules.Size; r++)//primero revisa las filas
         {
             if (TryInUnit(ctx, SudokuSolverUtils.GetRowUnit(r), out hint))//cada vuelta obtiene un fila completa
                 //Ejemplo: GetRowUnit(0) devuelve [0, 1, 2, 3, 4, 5, 6, 7, 8] Eso representa la primera fila.
                 return true;//Si encuentra algo, también retorna true.
         }
-        for (int c = 0; c < 9; c++)//despues revisa las columnas
+        for (int c = 0; c < SudokuRules.Size; c++)//despues revisa las columnas
         {
             if (TryInUnit(ctx, SudokuSolverUtils.GetColUnit(c), out hint))//cada vuelta obtine una columna completa
                 //GetColUnit(c) devuelve los índices de una columna.
                 //Ejemplo: GetColUnit(0) [0, 9, 18, 27, 36, 45, 54, 63, 72]
                 return true;//Si encuentra algo, también retorna true.
         }
-        for (int box = 0; box < 9; box++)//despues revisa las cajas 3x3
+        for (int box = 0; box < SudokuRules.TotalBoxCount; box++)//despues revisa las cajas
         {
             if (TryInUnit(ctx, SudokuSolverUtils.GetBoxUnit(box), out hint))//cada vuelta obtiene los indexes de la caja
                 //Las cajas se numeran así:
@@ -44,7 +44,7 @@ public class HiddenSingleTechnique : ISudokuTechnique//Esta técnica busca un Hi
         //Y revisa si dentro de esa unidad algún número del 1 al 9 aparece como candidato en una sola celda.
         //out SudokuHint hint : Si encuentra una jugada, entrega un hint con las celdas destacadas y la acción de borrar notas.
     {
-        for (int n = 1; n <= 9; n++)//Este ciclo prueba cada número del Sudoku.
+        for (int n = 1; n <= SudokuRules.MaxValue; n++)//Este ciclo prueba cada número del Sudoku.
             //Primero revisa si el 1 aparece una sola vez como candidato en la unidad. luego el 2 ,luego el 3 ,hasta el 9
         {
             int bit = 1 << (n - 1);//Aquí convierte el número n a su bit correspondiente.
@@ -69,10 +69,8 @@ public class HiddenSingleTechnique : ISudokuTechnique//Esta técnica busca un Hi
             {
                 int index = unit[i];//Obtiene el índice lineal de la celda.
                 //Ejemplo:index = 23 Ese índice representa una celda del tablero.
-                int r = index / 9;//Convierte el índice lineal a fila
-                                  //si index = 23 entonces seria int r = index / 9 que seria r = 23 / 9 que son 2
-                int c = index % 9;//Convierte el índice lineal a columna.
-                                  //si index = 23 entonces seria int c = index % 9 que seria c = 23 / 9  que son 2 pero aqui es el sobrante osea 9 * 2 = 18 y de 18 a 23 son 5
+                int r = SudokuRules.GetRow(index);//Convierte el índice lineal a fila
+                int c = SudokuRules.GetCol(index);//Convierte el índice lineal a columna.
 
                 //entonces index 23 = board[2, 5]
                 if (ctx.board[r, c] != 0)//Si la celda ya tiene número, la salta.Hidden Single solo analiza celdas vacías.
